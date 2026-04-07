@@ -5,9 +5,15 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # If request is not already inside /public, route it there.
-    RewriteCond %{REQUEST_URI} !^/public/
+    # Allow certificate challenge files to pass through untouched.
+    RewriteCond %{REQUEST_URI} ^/\.well-known/ [OR]
+    RewriteCond %{REQUEST_URI} ^/public/
+    RewriteRule ^ - [L]
+
+    # Route homepage explicitly to Laravel public directory.
+    RewriteRule ^$ public/ [L]
+
+    # Route all non-existing files to public.
     RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
