@@ -147,16 +147,8 @@
             discount: 0,
             useWallet: false,
             loading: false,
-            subtotal: {
-                {
-                    $subtotal
-                }
-            },
-            walletBalance: {
-                {
-                    auth() - > user() - > wallet_balance
-                }
-            },
+            subtotal: Number("{{ $subtotal }}"),
+            walletBalance: Number("{{ auth()->user()->wallet_balance }}"),
 
             get walletDeduction() {
                 if (!this.useWallet) return 0;
@@ -170,7 +162,7 @@
             },
 
             validateCoupon() {
-                fetch('/cart/validate-coupon', {
+                fetch("{{ route('cart.validate-coupon') }}", {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

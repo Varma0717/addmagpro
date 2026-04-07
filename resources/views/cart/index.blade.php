@@ -77,8 +77,11 @@
 
 @push('scripts')
 <script>
+    const cartBaseUrl = "{{ url('/cart') }}";
+    const cartCouponUrl = "{{ route('cart.validate-coupon') }}";
+
     function updateQty(itemId, qty) {
-        fetch(`/cart/${itemId}`, {
+        fetch(`${cartBaseUrl}/${itemId}`, {
                 method: 'PATCH',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -103,7 +106,7 @@
     }
 
     function removeItem(itemId) {
-        fetch(`/cart/${itemId}`, {
+        fetch(`${cartBaseUrl}/${itemId}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -120,7 +123,7 @@
 
     function applyCoupon() {
         const code = document.getElementById('coupon-input').value;
-        fetch('/cart/validate-coupon', {
+        fetch(cartCouponUrl, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

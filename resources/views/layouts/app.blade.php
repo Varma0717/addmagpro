@@ -158,7 +158,7 @@
             return {
                 count: 0,
                 fetchCount() {
-                    fetch('/account/notifications/count')
+                    fetch("{{ route('account.notifications.count') }}")
                         .then(r => r.json())
                         .then(d => {
                             this.count = d.count || 0;
