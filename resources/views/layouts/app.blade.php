@@ -7,9 +7,16 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name')) — Local Commerce &amp; Deals</title>
     <meta name="description" content="@yield('description', 'Shop local products, discover services, earn wallet rewards and referral bonuses.')">
-    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @else
+    @php
+    $viteRendered = false;
+    try {
+    echo app(Illuminate\Foundation\Vite::class)(['resources/css/app.css', 'resources/js/app.js']);
+    $viteRendered = true;
+    } catch (Throwable $e) {
+    $viteRendered = false;
+    }
+    @endphp
+    @if (!$viteRendered)
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     @endif
