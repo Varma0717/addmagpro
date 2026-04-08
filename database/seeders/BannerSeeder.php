@@ -13,6 +13,7 @@ class BannerSeeder extends Seeder
             [
                 'title'      => 'Welcome to AddMagPro',
                 'subtitle'   => 'Your one-stop shop for products, services & more',
+                'image'      => 'banners/placeholder-welcome.jpg',
                 'placement'  => 'homepage_carousel',
                 'sort_order' => 1,
                 'is_active'  => true,
@@ -22,6 +23,7 @@ class BannerSeeder extends Seeder
             [
                 'title'      => '100% Cashback Products',
                 'subtitle'   => 'Shop now and get amazing cashback rewards',
+                'image'      => 'banners/placeholder-cashback.jpg',
                 'placement'  => 'homepage_carousel',
                 'sort_order' => 2,
                 'is_active'  => true,
@@ -31,6 +33,7 @@ class BannerSeeder extends Seeder
             [
                 'title'      => 'Register Your Business',
                 'subtitle'   => 'Reach thousands of customers through our platform',
+                'image'      => 'banners/placeholder-business.jpg',
                 'placement'  => 'homepage_carousel',
                 'sort_order' => 3,
                 'is_active'  => true,
@@ -40,6 +43,7 @@ class BannerSeeder extends Seeder
             [
                 'title'      => 'Special Offers on Groceries',
                 'subtitle'   => 'Get the best deals on daily essentials',
+                'image'      => 'banners/placeholder-groceries.jpg',
                 'placement'  => 'homepage_mid',
                 'sort_order' => 1,
                 'is_active'  => true,
