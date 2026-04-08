@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/search', [SearchController::class, 'index'])->name('search');
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+Route::get('/stores', [CategoryController::class, 'stores'])->name('categories.stores');
+Route::get('/services', [CategoryController::class, 'servicesDirectory'])->name('categories.services');
 Route::get('/category/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/listing/{listing:slug}', [ListingController::class, 'show'])->name('listings.show');

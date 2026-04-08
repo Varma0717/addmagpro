@@ -171,6 +171,10 @@
             <div class="flex gap-1 py-2.5 text-sm overflow-x-auto scrollbar-hide" style="-ms-overflow-style:none;scrollbar-width:none;">
                 <a href="{{ route('categories.index') }}"
                     class="flex-shrink-0 px-4 py-1.5 rounded-full font-medium transition-all {{ request()->routeIs('categories.index') ? 'bg-brand-500 text-white shadow-sm' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-600' }}">All</a>
+                <a href="{{ route('categories.stores') }}"
+                    class="flex-shrink-0 px-4 py-1.5 rounded-full font-medium transition-all {{ request()->routeIs('categories.stores') ? 'bg-brand-500 text-white shadow-sm' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-600' }}">Stores</a>
+                <a href="{{ route('categories.services') }}"
+                    class="flex-shrink-0 px-4 py-1.5 rounded-full font-medium transition-all {{ request()->routeIs('categories.services') ? 'bg-blue-500 text-white shadow-sm' : 'text-surface-600 hover:bg-blue-50 hover:text-blue-600' }}">Services</a>
                 @foreach(\App\Models\Category::active()->topLevel()->get() as $cat)
                 <a href="{{ route('categories.show', $cat->slug) }}"
                     class="flex-shrink-0 px-4 py-1.5 rounded-full font-medium transition-all {{ request()->is('category/'.$cat->slug.'*') ? 'bg-brand-500 text-white shadow-sm' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-600' }}">

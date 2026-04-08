@@ -83,16 +83,32 @@ class CategorySeeder extends Seeder
             'Tyre Retreader', 'Watch Shop', 'Wheel Alignment', 'Wholesale Shops', 'Yoga Centre',
         ];
 
+        // Map store names to scraped images
+        $storeImages = [
+            'Bangle Store'    => 'scraped/vendors/66471bb46a61c.BANGLE STORE.png',
+            'Battery Shop'    => 'scraped/vendors/66471bc3be0a7.BATTERY SHOP.png',
+            'Beauty Parlour'  => 'scraped/vendors/66471bce099e4.BEAUTY PORLOUR.png',
+            'Footwear'        => 'scraped/vendors/66576a4a270fb.FOOTWEAR.png',
+            'Jewellery'       => 'scraped/vendors/66576a6e6a31a.JEWELLARY.png',
+            'Mechanic Shop'   => 'scraped/vendors/6625f1edbd43d.mechanic_service.jpeg',
+            'Tours & Travels' => 'scraped/vendors/667eebc134edd.TRAVELS.png',
+            'Tent House'      => 'scraped/vendors/674ddc1ae58c3.Demo Tents.jpg',
+        ];
+
         foreach ($stores as $i => $name) {
+            $data = [
+                'name'       => $name,
+                'parent_id'  => $storesParent->id,
+                'type'       => 'service',
+                'is_active'  => true,
+                'sort_order' => $i + 1,
+            ];
+            if (isset($storeImages[$name])) {
+                $data['image'] = $storeImages[$name];
+            }
             Category::updateOrCreate(
                 ['slug' => Str::slug($name)],
-                [
-                    'name'       => $name,
-                    'parent_id'  => $storesParent->id,
-                    'type'       => 'service',
-                    'is_active'  => true,
-                    'sort_order' => $i + 1,
-                ]
+                $data
             );
         }
 
@@ -135,16 +151,30 @@ class CategorySeeder extends Seeder
             'Wedding Decors', 'Yoga Teacher',
         ];
 
+        // Map service names to scraped images
+        $serviceImages = [
+            'Bridal Makeup'      => 'scraped/vendors/6646fdb55e830.BRIDAL MAKEUP.png',
+            'Building Leakages'  => 'scraped/vendors/6646fdc502e78.BUILDING LEAKAGES.png',
+            'TV Repair'          => 'scraped/vendors/662245be78486.tv_repair_service.jpeg',
+            'Mechanic'           => 'scraped/vendors/662626210f46d.mechanic_service.jpeg',
+            'PC & Laptop Repair' => 'scraped/vendors/6656cd2b949b6.laptop_category.jpeg',
+            'Fashion Designing'  => 'scraped/vendors/66576a3b08627.FASHION.png',
+        ];
+
         foreach ($servicesList as $i => $name) {
+            $data = [
+                'name'       => $name,
+                'parent_id'  => $servicesParent->id,
+                'type'       => 'service',
+                'is_active'  => true,
+                'sort_order' => $i + 1,
+            ];
+            if (isset($serviceImages[$name])) {
+                $data['image'] = $serviceImages[$name];
+            }
             Category::updateOrCreate(
                 ['slug' => Str::slug($name)],
-                [
-                    'name'       => $name,
-                    'parent_id'  => $servicesParent->id,
-                    'type'       => 'service',
-                    'is_active'  => true,
-                    'sort_order' => $i + 1,
-                ]
+                $data
             );
         }
 

@@ -17,6 +17,50 @@ class CategoryController extends Controller
         return view('categories.index', compact('ecomCategories', 'serviceCategories'));
     }
 
+    /**
+     * Stores directory — image-card grid of all store subcategories.
+     */
+    public function stores(Request $request)
+    {
+        $parent = Category::where('slug', 'stores')->first();
+
+        $query = Category::active()->orderBy('sort_order');
+        if ($parent) {
+            $query->where('parent_id', $parent->id);
+        }
+
+        $search = $request->get('q');
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $stores = $query->get();
+
+        return view('categories.stores', compact('stores', 'search'));
+    }
+
+    /**
+     * Services directory — image-card grid of all service subcategories.
+     */
+    public function servicesDirectory(Request $request)
+    {
+        $parent = Category::where('slug', 'services-directory')->first();
+
+        $query = Category::active()->orderBy('sort_order');
+        if ($parent) {
+            $query->where('parent_id', $parent->id);
+        }
+
+        $search = $request->get('q');
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $services = $query->get();
+
+        return view('categories.services', compact('services', 'search'));
+    }
+
     public function show(Request $request, Category $category)
     {
         if ($category->type === 'ecommerce') {
