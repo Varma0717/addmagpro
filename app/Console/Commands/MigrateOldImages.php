@@ -42,10 +42,9 @@ class MigrateOldImages extends Command
         // Ensure storage link exists
         $publicStorage = public_path('storage');
         if (!file_exists($publicStorage)) {
-            $this->warn('Storage link does not exist. Run: php artisan storage:link');
-            if (!$dryRun) {
-                $this->call('storage:link');
-            }
+            $this->warn('Storage symlink does not exist. Create it manually:');
+            $this->line('  ln -s ' . storage_path('app/public') . ' ' . $publicStorage);
+            $this->warn('Continuing anyway — images will be saved to storage/app/public/');
         }
 
         $stats = ['found' => 0, 'copied' => 0, 'skipped' => 0, 'failed' => 0];
