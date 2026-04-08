@@ -8,6 +8,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ListingController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,14 @@ Route::get('/category/{category:slug}', [CategoryController::class, 'show'])->na
 Route::get('/product/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/listing/{listing:slug}', [ListingController::class, 'show'])->name('listings.show');
 Route::get('/ads/{ad}/click', [AdController::class, 'click'])->name('ads.click');
+
+// Static pages
+Route::get('/about', [PageController::class, 'about'])->name('pages.about');
+Route::get('/contact', [PageController::class, 'contact'])->name('pages.contact');
+Route::get('/privacy-policy', [PageController::class, 'privacy'])->name('pages.privacy');
+Route::get('/terms', [PageController::class, 'terms'])->name('pages.terms');
+Route::get('/shipping-policy', [PageController::class, 'shipping'])->name('pages.shipping');
+Route::get('/refund-policy', [PageController::class, 'refund'])->name('pages.refund');
 
 // Auth + product/listing review routes (auth required)
 Route::middleware('auth')->group(function () {

@@ -82,16 +82,43 @@
     </div>
 </section>
 
-{{-- Featured Products --}}
+{{-- Featured Products / 100% Cashback Products --}}
 @if($featuredProducts->count())
 <section class="mb-12" data-animate>
     <div class="flex items-center justify-between mb-6">
-        <h2 class="section-title">Featured Products</h2>
+        <h2 class="section-title">100% Cashback Products</h2>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 lg:gap-5">
         @foreach($featuredProducts as $product)
         @include('partials.product-card', ['product' => $product])
         @endforeach
+    </div>
+</section>
+@endif
+
+{{-- Groceries Highlight --}}
+@if($groceryProducts->count())
+<section class="mb-12" data-animate>
+    <div class="bg-gradient-to-r from-emerald-50 to-green-50 rounded-3xl p-6 md:p-8 border border-emerald-100">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="font-display text-2xl font-bold text-surface-900">Groceries</h2>
+                <p class="text-sm text-surface-500 mt-1">Get 100% Cashback On These Products</p>
+            </div>
+            @if($groceriesCategory)
+            <a href="{{ route('categories.show', $groceriesCategory->slug) }}" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 transition-colors">
+                View all
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+            </a>
+            @endif
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            @foreach($groceryProducts as $product)
+            @include('partials.product-card', ['product' => $product])
+            @endforeach
+        </div>
     </div>
 </section>
 @endif
@@ -133,6 +160,111 @@
     </div>
 </section>
 
+{{-- Popular Vendors --}}
+@if($popularVendors->count())
+<section class="mb-12" data-animate>
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="section-title">Popular Vendors</h2>
+    </div>
+    <div class="relative" x-data="vendorCarousel()">
+        <div class="overflow-hidden">
+            <div class="flex gap-4 transition-transform duration-500" :style="'transform: translateX(-' + (vendorPage * 100) + '%)'">
+                @foreach($popularVendors as $vendor)
+                <div class="flex-shrink-0 w-1/2 md:w-1/4">
+                    <a href="{{ route('listings.show', $vendor->slug) }}" class="block bg-white rounded-2xl border border-surface-100 hover:border-brand-300 hover:shadow-soft transition-all duration-300 overflow-hidden group">
+                        <div class="h-32 bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center">
+                            @if($vendor->images->count())
+                            <img src="{{ Storage::url($vendor->images->first()->image_path) }}" alt="{{ $vendor->business_name }}" class="w-full h-full object-cover">
+                            @else
+                            <svg class="w-12 h-12 text-brand-300" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
+                            </svg>
+                            @endif
+                        </div>
+                        <div class="p-3">
+                            <h3 class="font-semibold text-sm text-surface-900 group-hover:text-brand-600 truncate">{{ $vendor->business_name }}</h3>
+                            @if($vendor->city)
+                            <p class="text-xs text-surface-400 mt-0.5">{{ $vendor->city }}</p>
+                            @endif
+                        </div>
+                    </a>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @if($popularVendors->count() > 4)
+        <div class="flex justify-center gap-2 mt-4">
+            @for($i = 0; $i < ceil($popularVendors->count() / 4); $i++)
+            <button @click="vendorPage = {{ $i }}"
+                :class="vendorPage === {{ $i }} ? 'bg-brand-500 w-6' : 'bg-surface-300 w-2'"
+                class="h-2 rounded-full transition-all duration-300"></button>
+            @endfor
+        </div>
+        @endif
+    </div>
+</section>
+@endif
+
+{{-- Top Categories --}}
+@if($topCategories->count())
+<section class="mb-12" data-animate>
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="section-title">Top Categories</h2>
+            <p class="text-sm text-surface-400 mt-1">Select Your Favorite Categories And Purchase</p>
+        </div>
+        <a href="{{ route('categories.index') }}" class="text-sm text-brand-500 hover:text-brand-600 font-medium flex items-center gap-1 transition-colors">
+            View all
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+        </a>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        @foreach($topCategories as $cat)
+        <a href="{{ route('categories.show', $cat->slug) }}"
+            class="relative group rounded-2xl overflow-hidden border border-surface-100 hover:border-brand-300 hover:shadow-soft transition-all duration-300 bg-white">
+            <div class="h-36 bg-gradient-to-br from-brand-50 via-brand-100 to-brand-50 flex items-center justify-center">
+                @if($cat->image)
+                <img src="{{ Storage::url($cat->image) }}" alt="{{ $cat->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                @else
+                <span class="text-5xl">{{ $cat->icon }}</span>
+                @endif
+            </div>
+            <div class="p-4 text-center">
+                <h3 class="font-semibold text-surface-900 group-hover:text-brand-600 transition-colors">{{ $cat->name }}</h3>
+                <p class="text-xs text-surface-400 mt-1">{{ $cat->products_count }} {{ Str::plural('product', $cat->products_count) }}</p>
+            </div>
+        </a>
+        @endforeach
+    </div>
+</section>
+@endif
+
+{{-- Stats --}}
+<section class="mb-12" data-animate>
+    <div class="bg-gradient-to-r from-brand-500 to-brand-600 rounded-3xl p-8 md:p-12">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div>
+                <p class="font-display text-3xl md:text-4xl font-bold text-white" x-data="counter(32494)" x-text="count.toLocaleString()">0</p>
+                <p class="text-brand-100 text-sm mt-1">Total Visitors</p>
+            </div>
+            <div>
+                <p class="font-display text-3xl md:text-4xl font-bold text-white" x-data="counter({{ $totalUsers ?: 1403 }})" x-text="count.toLocaleString()">0</p>
+                <p class="text-brand-100 text-sm mt-1">Total Joinings</p>
+            </div>
+            <div>
+                <p class="font-display text-3xl md:text-4xl font-bold text-white" x-data="counter({{ $ecomCategories->count() + $serviceCategories->count() }})" x-text="count.toLocaleString()">0</p>
+                <p class="text-brand-100 text-sm mt-1">Categories</p>
+            </div>
+            <div>
+                <p class="font-display text-3xl md:text-4xl font-bold text-white" x-data="counter({{ $popularVendors->count() ?: 50 }})" x-text="count.toLocaleString()">0</p>
+                <p class="text-brand-100 text-sm mt-1">Vendors</p>
+            </div>
+        </div>
+    </div>
+</section>
+
 {{-- New Arrivals --}}
 @if($newProducts->count())
 <section class="mb-12" data-animate>
@@ -160,6 +292,26 @@
                         this.current = (this.current + 1) % total;
                     }, 5000);
                 }
+            }
+        }
+    }
+
+    function vendorCarousel() {
+        return {
+            vendorPage: 0,
+        }
+    }
+
+    function counter(target) {
+        return {
+            count: 0,
+            init() {
+                const duration = 2000;
+                const step = Math.max(1, Math.ceil(target / (duration / 16)));
+                const interval = setInterval(() => {
+                    this.count = Math.min(this.count + step, target);
+                    if (this.count >= target) clearInterval(interval);
+                }, 16);
             }
         }
     }

@@ -251,11 +251,12 @@
                 <div>
                     <h4 class="font-display font-semibold text-white mb-4">Company</h4>
                     <ul class="space-y-2.5 text-sm">
-                        <li><a href="javascript:;" class="text-surface-400 hover:text-brand-400 transition-colors">About Us</a></li>
-                        <li><a href="javascript:;" class="text-surface-400 hover:text-brand-400 transition-colors">Contact Us</a></li>
-                        <li><a href="javascript:;" class="text-surface-400 hover:text-brand-400 transition-colors">FAQ</a></li>
-                        <li><a href="javascript:;" class="text-surface-400 hover:text-brand-400 transition-colors">Privacy Policy</a></li>
-                        <li><a href="javascript:;" class="text-surface-400 hover:text-brand-400 transition-colors">Terms &amp; Conditions</a></li>
+                        <li><a href="{{ route('pages.about') }}" class="text-surface-400 hover:text-brand-400 transition-colors">About Us</a></li>
+                        <li><a href="{{ route('pages.contact') }}" class="text-surface-400 hover:text-brand-400 transition-colors">Contact Us</a></li>
+                        <li><a href="{{ route('pages.privacy') }}" class="text-surface-400 hover:text-brand-400 transition-colors">Privacy Policy</a></li>
+                        <li><a href="{{ route('pages.terms') }}" class="text-surface-400 hover:text-brand-400 transition-colors">Terms &amp; Conditions</a></li>
+                        <li><a href="{{ route('pages.shipping') }}" class="text-surface-400 hover:text-brand-400 transition-colors">Shipping Policy</a></li>
+                        <li><a href="{{ route('pages.refund') }}" class="text-surface-400 hover:text-brand-400 transition-colors">Refund Policy</a></li>
                     </ul>
                 </div>
 
@@ -291,11 +292,13 @@
 
             {{-- Bottom --}}
             <div class="border-t border-surface-800 mt-12 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-surface-500">
-                <p>&copy; {{ date('Y') }} Add Mag Pro | All rights reserved.</p>
+                <p>&copy; {{ date('Y') }} www.addmagpro.com | A Unit of Koochana Publications | All rights reserved.</p>
                 <div class="flex gap-4">
-                    <a href="javascript:;" class="hover:text-surface-300 transition-colors">Privacy</a>
-                    <a href="javascript:;" class="hover:text-surface-300 transition-colors">Terms</a>
-                    <a href="javascript:;" class="hover:text-surface-300 transition-colors">Sitemap</a>
+                    <a href="{{ route('pages.privacy') }}" class="hover:text-surface-300 transition-colors">Privacy Policy</a>
+                    <a href="{{ route('pages.terms') }}" class="hover:text-surface-300 transition-colors">Terms &amp; Conditions</a>
+                    <a href="{{ route('pages.shipping') }}" class="hover:text-surface-300 transition-colors">Shipping Policy</a>
+                    <a href="{{ route('pages.refund') }}" class="hover:text-surface-300 transition-colors">Refund Policy</a>
+                    <a href="{{ route('pages.contact') }}" class="hover:text-surface-300 transition-colors">Contact Us</a>
                 </div>
             </div>
         </div>

@@ -114,6 +114,28 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Old AddMagPro Database Connection (for migration)
+        |--------------------------------------------------------------------------
+        |
+        | Configure via OLD_DB_* env vars to connect to the old addmagpro.com
+        | database. Used by: php artisan app:migrate-old-data
+        |
+        */
+        'old_addmagpro' => [
+            'driver'    => 'mysql',
+            'host'      => env('OLD_DB_HOST', '127.0.0.1'),
+            'port'      => env('OLD_DB_PORT', '3306'),
+            'database'  => env('OLD_DB_DATABASE', 'old_addmagpro'),
+            'username'  => env('OLD_DB_USERNAME', 'root'),
+            'password'  => env('OLD_DB_PASSWORD', ''),
+            'charset'   => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix'    => '',
+            'strict'    => false,
+        ],
+
     ],
 
     /*
