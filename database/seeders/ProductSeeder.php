@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -77,8 +78,19 @@ class ProductSeeder extends Seeder
             ],
         ];
 
+        // Map product names to scraped image files
+        $imageMap = [
+            'CALENDER'           => 'scraped/products/6969f12e0dca5.addmagpro Products  (2).png',
+            'UPMA RAVVA'         => 'scraped/products/6969f1ba9408c.addmagpro Products .png',
+            'SUJI RAVVA / BOMBAY'=> 'scraped/products/69243c730bcf7.SUJI BOMBAY RAVVA.jpeg',
+            'ATUKULU'            => 'scraped/products/69b0f91fb1268.thin atukulu.jpeg',
+            'RAGULU'             => 'scraped/products/69b0f8c2b9998.millet ragulu.jpeg',
+            'PUTNALU'            => 'scraped/products/69b0f7f8b229d.putnalu.jpeg',
+            'PESARLU'            => 'scraped/products/69b0f7ab21499.pesallu.jpeg',
+        ];
+
         foreach ($products as $product) {
-            Product::updateOrCreate(
+            $created = Product::updateOrCreate(
                 ['slug' => Str::slug($product['name'])],
                 array_merge($product, [
                     'slug'        => Str::slug($product['name']),
@@ -86,6 +98,18 @@ class ProductSeeder extends Seeder
                     'is_active'   => true,
                 ])
             );
+
+            // Attach scraped image if available
+            if (isset($imageMap[$product['name']])) {
+                ProductImage::updateOrCreate(
+                    ['product_id' => $created->id, 'is_primary' => true],
+                    [
+                        'image_path' => $imageMap[$product['name']],
+                        'sort_order' => 1,
+                        'is_primary' => true,
+                    ]
+                );
+            }
         }
 
         $this->command->info('Seeded ' . count($products) . ' products in Groceries category.');

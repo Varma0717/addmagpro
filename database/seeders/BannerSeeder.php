@@ -13,7 +13,7 @@ class BannerSeeder extends Seeder
             [
                 'title'      => 'Welcome to AddMagPro',
                 'subtitle'   => 'Your one-stop shop for products, services & more',
-                'image'      => 'banners/placeholder-welcome.jpg',
+                'image'      => 'scraped/banners/66422901440ac.server_mainslider4.png',
                 'placement'  => 'homepage_carousel',
                 'sort_order' => 1,
                 'is_active'  => true,
@@ -23,7 +23,7 @@ class BannerSeeder extends Seeder
             [
                 'title'      => '100% Cashback Products',
                 'subtitle'   => 'Shop now and get amazing cashback rewards',
-                'image'      => 'banners/placeholder-cashback.jpg',
+                'image'      => 'scraped/banners/6656f46a71a68.vendor_banner_common.jpg',
                 'placement'  => 'homepage_carousel',
                 'sort_order' => 2,
                 'is_active'  => true,
@@ -33,7 +33,7 @@ class BannerSeeder extends Seeder
             [
                 'title'      => 'Register Your Business',
                 'subtitle'   => 'Reach thousands of customers through our platform',
-                'image'      => 'banners/placeholder-business.jpg',
+                'image'      => 'scraped/banners/6656fa35a4849.main_banner2.png',
                 'placement'  => 'homepage_carousel',
                 'sort_order' => 3,
                 'is_active'  => true,
@@ -43,7 +43,7 @@ class BannerSeeder extends Seeder
             [
                 'title'      => 'Special Offers on Groceries',
                 'subtitle'   => 'Get the best deals on daily essentials',
-                'image'      => 'banners/placeholder-groceries.jpg',
+                'image'      => 'scraped/banners/6642291671991.server_mainslider5.png',
                 'placement'  => 'homepage_mid',
                 'sort_order' => 1,
                 'is_active'  => true,

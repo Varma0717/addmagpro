@@ -23,7 +23,7 @@ class ScrapeOldSiteImages extends Command
         $this->info('Fetching homepage HTML from ' . $baseUrl . ($dryRun ? ' [DRY RUN]' : ''));
 
         try {
-            $response = Http::timeout(30)->get($baseUrl);
+            $response = Http::withoutVerifying()->timeout(30)->get($baseUrl);
             if (!$response->successful()) {
                 $this->error("Failed to fetch homepage: HTTP {$response->status()}");
                 return self::FAILURE;
@@ -160,7 +160,7 @@ class ScrapeOldSiteImages extends Command
             }
 
             try {
-                $imgResponse = Http::timeout(30)->get($url);
+                $imgResponse = Http::withoutVerifying()->timeout(30)->get($url);
                 if ($imgResponse->successful()) {
                     $contentType = $imgResponse->header('Content-Type');
                     if ($contentType && Str::startsWith($contentType, 'image/')) {

@@ -12,9 +12,9 @@
             x-transition:enter="transition ease-out duration-700" x-transition:enter-start="opacity-0 scale-105" x-transition:enter-end="opacity-100 scale-100"
             x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
             class="absolute inset-0">
-            <img src="{{ Storage::url($banner->image_path) }}" alt="{{ $banner->title }}" class="w-full h-full object-cover">
-            @if($banner->link_url)
-            <a href="{{ $banner->link_url }}" class="absolute inset-0"></a>
+            <img src="{{ Storage::url($banner->image) }}" alt="{{ $banner->title }}" class="w-full h-full object-cover">
+            @if($banner->link_value)
+            <a href="{{ $banner->link_value }}" class="absolute inset-0"></a>
             @endif
             @if($banner->title)
             <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-8 py-6">
@@ -126,7 +126,7 @@
 {{-- Mid Banner --}}
 @if($midBanners->count())
 <div class="mb-12 rounded-3xl overflow-hidden shadow-card" data-animate>
-    <img src="{{ Storage::url($midBanners->first()->image_path) }}" alt="" class="w-full h-40 md:h-56 object-cover">
+    <img src="{{ Storage::url($midBanners->first()->image) }}" alt="" class="w-full h-40 md:h-56 object-cover">
 </div>
 @endif
 
