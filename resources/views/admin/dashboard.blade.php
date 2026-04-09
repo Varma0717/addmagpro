@@ -50,13 +50,13 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-100">
-                    @forelse($recentOrders as $order)
+                    @forelse($recent_orders as $order)
                     <tr class="hover:bg-surface-50 transition-colors">
                         <td class="table-cell">
                             <a href="{{ route('admin.orders.show', $order) }}" class="text-brand-600 hover:text-brand-700 font-medium">#{{ $order->id }}</a>
                         </td>
                         <td class="table-cell text-surface-700">{{ $order->user->name ?? '—' }}</td>
-                        <td class="table-cell font-semibold">₹{{ number_format($order->total_amount, 2) }}</td>
+                        <td class="table-cell font-semibold">₹{{ number_format($order->total, 2) }}</td>
                         <td class="table-cell">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ring-1
                                     {{ match($order->status) {
@@ -100,7 +100,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-100">
-                    @forelse($recentUsers as $user)
+                    @forelse($recent_users as $user)
                     <tr class="hover:bg-surface-50 transition-colors">
                         <td class="table-cell">
                             <a href="{{ route('admin.users.show', $user) }}" class="text-brand-600 hover:text-brand-700 font-medium">{{ $user->name }}</a>
