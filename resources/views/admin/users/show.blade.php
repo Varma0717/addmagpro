@@ -62,10 +62,10 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-100">
-                    @forelse($orders as $order)
+                    @forelse($user->orders as $order)
                     <tr class="hover:bg-surface-50 transition-colors">
                         <td class="table-cell"><a href="{{ route('admin.orders.show', $order) }}" class="text-brand-600 hover:text-brand-700 font-medium">#{{ $order->id }}</a></td>
-                        <td class="table-cell font-semibold">₹{{ number_format($order->total_amount, 2) }}</td>
+                        <td class="table-cell font-semibold">₹{{ number_format($order->total, 2) }}</td>
                         <td class="table-cell"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ring-1 bg-surface-50 text-surface-600 ring-surface-200">{{ ucfirst($order->status) }}</span></td>
                         <td class="table-cell text-surface-400">{{ $order->created_at->format('d M Y') }}</td>
                     </tr>
@@ -96,7 +96,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-100">
-                    @forelse($walletTrans as $tx)
+                    @forelse($user->walletTransactions as $tx)
                     <tr class="hover:bg-surface-50 transition-colors">
                         <td class="table-cell text-surface-600">{{ $tx->description }}</td>
                         <td class="table-cell">
@@ -136,9 +136,9 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-surface-100">
-                    @forelse($referrals as $ref)
+                    @forelse($user->referrals as $ref)
                     <tr class="hover:bg-surface-50 transition-colors">
-                        <td class="table-cell font-medium">{{ $ref->referee->name ?? '—' }}</td>
+                        <td class="table-cell font-medium">{{ $ref->referred->name ?? '—' }}</td>
                         <td class="table-cell">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ring-1 {{ $ref->signup_reward_given ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-surface-50 text-surface-500 ring-surface-200' }}">
                                 {{ $ref->signup_reward_given ? 'Given' : 'Pending' }}

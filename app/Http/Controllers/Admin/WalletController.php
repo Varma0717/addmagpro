@@ -19,7 +19,9 @@ class WalletController extends Controller
             ->latest()
             ->paginate(30);
 
-        return view('admin.wallet.index', compact('transactions'));
+        $users = User::where('role', 'user')->orderBy('name')->get();
+
+        return view('admin.wallet.index', compact('transactions', 'users'));
     }
 
     public function credit(Request $request)
