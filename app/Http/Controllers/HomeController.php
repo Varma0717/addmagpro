@@ -30,12 +30,6 @@ class HomeController extends Controller
             ->with('images', 'category')
             ->take(8)->get();
 
-        // Top categories with product counts
-        $topCategories = Category::active()->ecommerce()->topLevel()
-            ->withCount(['products' => fn ($q) => $q->where('is_active', true)])
-            ->orderByDesc('products_count')
-            ->take(4)->get();
-
         // Stats
         $totalUsers = User::count();
 
@@ -49,7 +43,6 @@ class HomeController extends Controller
             'groceryProducts',
             'groceriesCategory',
             'popularVendors',
-            'topCategories',
             'totalUsers'
         ));
     }

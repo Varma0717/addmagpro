@@ -205,42 +205,6 @@
 </section>
 @endif
 
-{{-- Top Categories --}}
-@if($topCategories->count())
-<section class="mb-12" data-animate>
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h2 class="section-title">Top Categories</h2>
-            <p class="text-sm text-surface-400 mt-1">Select Your Favorite Categories And Purchase</p>
-        </div>
-        <a href="{{ route('categories.index') }}" class="text-sm text-brand-500 hover:text-brand-600 font-medium flex items-center gap-1 transition-colors">
-            View all
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-        </a>
-    </div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        @foreach($topCategories as $cat)
-        <a href="{{ route('categories.show', $cat->slug) }}"
-            class="relative group rounded-2xl overflow-hidden border border-surface-100 hover:border-brand-300 hover:shadow-soft transition-all duration-300 bg-white">
-            <div class="h-36 bg-gradient-to-br from-brand-50 via-brand-100 to-brand-50 flex items-center justify-center">
-                @if($cat->image)
-                <img src="{{ imageUrl($cat->image) }}" alt="{{ $cat->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                @else
-                <span class="text-5xl">{{ $cat->icon }}</span>
-                @endif
-            </div>
-            <div class="p-4 text-center">
-                <h3 class="font-semibold text-surface-900 group-hover:text-brand-600 transition-colors">{{ $cat->name }}</h3>
-                <p class="text-xs text-surface-400 mt-1">{{ $cat->products_count }} {{ Str::plural('product', $cat->products_count) }}</p>
-            </div>
-        </a>
-        @endforeach
-    </div>
-</section>
-@endif
-
 {{-- Stats --}}
 <section class="mb-12" data-animate>
     <div class="bg-gradient-to-r from-brand-500 to-brand-600 rounded-3xl p-8 md:p-12">
