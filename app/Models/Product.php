@@ -13,6 +13,8 @@ class Product extends Model
         'name',
         'slug',
         'category_id',
+        'brand_id',
+        'vendor_id',
         'description',
         'short_description',
         'price',
@@ -38,6 +40,16 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
     }
 
     public function images()
