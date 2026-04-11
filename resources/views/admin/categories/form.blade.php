@@ -47,7 +47,7 @@
             <div>
                 <label class="block text-sm font-medium text-surface-700 mb-1">Image</label>
                 @if(isset($category) && $category->image)
-                <img src="{{ Storage::url($category->image) }}" class="w-20 h-20 object-cover rounded-lg ring-1 ring-surface-200 mb-2">
+                <img src="{{ imageUrl($category->image) }}" class="w-20 h-20 object-cover rounded-lg ring-1 ring-surface-200 mb-2">
                 @endif
                 <input type="file" name="image" accept="image/*"
                     class="w-full text-sm text-surface-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 file:cursor-pointer">

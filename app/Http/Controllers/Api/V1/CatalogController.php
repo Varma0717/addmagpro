@@ -28,7 +28,7 @@ class CatalogController extends Controller
                     'slug' => $category->slug,
                     'type' => $category->type,
                     'icon' => $category->icon,
-                    'image_url' => $category->image ? Storage::url($category->image) : null,
+                    'image_url' => $category->image ? imageUrl($category->image) : null,
                 ];
             })
             ->values();
@@ -87,7 +87,7 @@ class CatalogController extends Controller
                     'name' => $product->category?->name,
                     'slug' => $product->category?->slug,
                 ],
-                'primary_image_url' => $product->primaryImage?->image_path ? Storage::url($product->primaryImage->image_path) : null,
+                'primary_image_url' => $product->primaryImage?->image_path ? imageUrl($product->primaryImage->image_path) : null,
             ];
         });
 
@@ -132,7 +132,7 @@ class CatalogController extends Controller
             ],
             'images' => $product->images->map(fn($image) => [
                 'id' => $image->id,
-                'image_url' => Storage::url($image->image_path),
+                'image_url' => imageUrl($image->image_path),
                 'is_primary' => (bool) $image->is_primary,
                 'sort_order' => $image->sort_order,
             ])->values(),
@@ -197,7 +197,7 @@ class CatalogController extends Controller
                     'name' => $listing->category?->name,
                     'slug' => $listing->category?->slug,
                 ],
-                'primary_image_url' => $listing->images->first()?->image_path ? Storage::url($listing->images->first()->image_path) : null,
+                'primary_image_url' => $listing->images->first()?->image_path ? imageUrl($listing->images->first()->image_path) : null,
             ];
         });
 
@@ -244,7 +244,7 @@ class CatalogController extends Controller
             ],
             'images' => $listing->images->map(fn($image) => [
                 'id' => $image->id,
-                'image_url' => Storage::url($image->image_path),
+                'image_url' => imageUrl($image->image_path),
             ])->values(),
             'reviews' => $listing->reviews
                 ->where('is_approved', true)
@@ -289,7 +289,7 @@ class CatalogController extends Controller
                     'discount_price' => $product->discount_price,
                     'effective_price' => $product->effective_price,
                     'category' => $product->category?->name,
-                    'primary_image_url' => $product->primaryImage?->image_path ? Storage::url($product->primaryImage->image_path) : null,
+                    'primary_image_url' => $product->primaryImage?->image_path ? imageUrl($product->primaryImage->image_path) : null,
                 ];
             })
             ->values();
@@ -310,7 +310,7 @@ class CatalogController extends Controller
                     'slug' => $listing->slug,
                     'city' => $listing->city,
                     'category' => $listing->category?->name,
-                    'primary_image_url' => $listing->images->first()?->image_path ? Storage::url($listing->images->first()->image_path) : null,
+                    'primary_image_url' => $listing->images->first()?->image_path ? imageUrl($listing->images->first()->image_path) : null,
                 ];
             })
             ->values();

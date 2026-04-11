@@ -21,7 +21,7 @@
     <a href="{{ route('listings.show', $listing->slug) }}"
         class="flex gap-4 bg-white rounded-xl border p-4 hover:shadow-md transition-all">
         @if($listing->images->count())
-        <img src="{{ Storage::url($listing->images->first()->image_path) }}" class="w-20 h-20 object-cover rounded-lg flex-shrink-0">
+        <img src="{{ imageUrl($listing->images->first()->image_path) }}" class="w-20 h-20 object-cover rounded-lg flex-shrink-0">
         @else
         <div class="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center text-2xl flex-shrink-0">🏪</div>
         @endif

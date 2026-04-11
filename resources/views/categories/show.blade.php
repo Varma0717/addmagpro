@@ -81,7 +81,7 @@
             <a href="{{ route('listings.show', $listing->slug) }}"
                 class="flex gap-4 card-hover p-5">
                 @if($listing->images->count())
-                <img src="{{ Storage::url($listing->images->first()->image_path) }}" alt="{{ $listing->business_name }}" class="w-24 h-24 object-cover rounded-xl flex-shrink-0">
+                <img src="{{ imageUrl($listing->images->first()->image_path) }}" alt="{{ $listing->business_name }}" class="w-24 h-24 object-cover rounded-xl flex-shrink-0">
                 @else
                 <div class="w-24 h-24 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg class="w-10 h-10 text-blue-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">

@@ -32,7 +32,7 @@
         class="group block bg-white rounded-2xl border border-surface-100 hover:border-brand-300 hover:shadow-soft transition-all duration-300 overflow-hidden">
         <div class="aspect-[4/3] overflow-hidden bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center">
             @if($store->image)
-            <img src="{{ Storage::url($store->image) }}" alt="{{ $store->name }}"
+            <img src="{{ imageUrl($store->image) }}" alt="{{ $store->name }}"
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
             @else
             <svg class="w-12 h-12 text-brand-300" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">

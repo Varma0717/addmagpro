@@ -17,7 +17,7 @@
         {{-- Avatar --}}
         <div class="flex items-center gap-5">
             @if(auth()->user()->avatar)
-            <img src="{{ Storage::url(auth()->user()->avatar) }}" class="w-18 h-18 rounded-2xl object-cover ring-2 ring-surface-100" alt="">
+            <img src="{{ imageUrl(auth()->user()->avatar) }}" class="w-18 h-18 rounded-2xl object-cover ring-2 ring-surface-100" alt="">
             @else
             <div class="w-18 h-18 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 text-white font-bold text-2xl flex items-center justify-center shadow-soft">
                 {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}

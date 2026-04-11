@@ -3,7 +3,7 @@
     @php $img = $product->images->first(); @endphp
     <div class="aspect-square overflow-hidden bg-surface-100 relative">
         @if($img)
-        <img src="{{ Storage::url($img->image_path) }}" alt="{{ $product->name }}"
+        <img src="{{ imageUrl($img->image_path) }}" alt="{{ $product->name }}"
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
         @else
         <div class="w-full h-full flex items-center justify-center">

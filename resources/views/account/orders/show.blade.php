@@ -58,7 +58,7 @@
             <div class="flex gap-4 p-5">
                 @php $img = $item->product?->images->first(); @endphp
                 @if($img)
-                <img src="{{ Storage::url($img->image_path) }}" class="w-16 h-16 object-cover rounded-xl flex-shrink-0" alt="">
+                <img src="{{ imageUrl($img->image_path) }}" class="w-16 h-16 object-cover rounded-xl flex-shrink-0" alt="">
                 @else
                 <div class="w-16 h-16 bg-surface-100 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg class="w-7 h-7 text-surface-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">

@@ -21,7 +21,7 @@
     @forelse($banners as $banner)
     <div class="card overflow-hidden group">
         <div class="relative overflow-hidden">
-            <img src="{{ Storage::url($banner->image_path) }}" class="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105">
+            <img src="{{ imageUrl($banner->image_path) }}" class="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105">
         </div>
         <div class="p-4 space-y-2">
             <div class="font-medium text-surface-800">{{ $banner->title ?? 'No title' }}</div>

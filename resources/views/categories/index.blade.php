@@ -48,7 +48,7 @@
         <a href="{{ route('categories.show', $cat->slug) }}"
             class="flex flex-col items-center gap-3 p-5 bg-white rounded-2xl border border-surface-100 hover:border-brand-300 hover:shadow-soft transition-all duration-300 group">
             @if($cat->image)
-            <img src="{{ Storage::url($cat->image) }}" alt="{{ $cat->name }}" class="w-16 h-16 object-cover rounded-xl group-hover:scale-110 transition-transform duration-300">
+            <img src="{{ imageUrl($cat->image) }}" alt="{{ $cat->name }}" class="w-16 h-16 object-cover rounded-xl group-hover:scale-110 transition-transform duration-300">
             @else
             <div class="w-16 h-16 bg-brand-50 rounded-xl flex items-center justify-center">
                 <svg class="w-8 h-8 text-brand-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -69,7 +69,7 @@
         <a href="{{ route('categories.show', $cat->slug) }}"
             class="flex flex-col items-center gap-3 p-5 bg-white rounded-2xl border border-surface-100 hover:border-blue-300 hover:shadow-soft transition-all duration-300 group">
             @if($cat->image)
-            <img src="{{ Storage::url($cat->image) }}" alt="{{ $cat->name }}" class="w-16 h-16 object-cover rounded-xl group-hover:scale-110 transition-transform duration-300">
+            <img src="{{ imageUrl($cat->image) }}" alt="{{ $cat->name }}" class="w-16 h-16 object-cover rounded-xl group-hover:scale-110 transition-transform duration-300">
             @else
             <div class="w-16 h-16 bg-blue-50 rounded-xl flex items-center justify-center">
                 <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">

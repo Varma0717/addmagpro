@@ -36,7 +36,7 @@
                 <td class="table-cell">
                     @php $img = $product->images->first(); @endphp
                     @if($img)
-                    <img src="{{ Storage::url($img->image_path) }}" class="w-12 h-12 rounded-lg object-cover ring-1 ring-surface-200">
+                    <img src="{{ imageUrl($img->image_path) }}" class="w-12 h-12 rounded-lg object-cover ring-1 ring-surface-200">
                     @else
                     <div class="w-12 h-12 rounded-lg bg-surface-100 flex items-center justify-center text-surface-400">
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

@@ -32,7 +32,7 @@
         @if($listing->images->count())
         <div class="flex gap-3 flex-wrap mt-4">
             @foreach($listing->images as $img)
-            <img src="{{ Storage::url($img->image_path) }}" class="w-24 h-24 object-cover rounded-lg ring-1 ring-surface-200">
+            <img src="{{ imageUrl($img->image_path) }}" class="w-24 h-24 object-cover rounded-lg ring-1 ring-surface-200">
             @endforeach
         </div>
         @endif

@@ -9,7 +9,7 @@
             {{-- User info --}}
             <div class="flex items-center gap-3 mb-5 pb-5 border-b border-surface-100">
                 @if(auth()->user()->avatar)
-                <img src="{{ Storage::url(auth()->user()->avatar) }}" class="w-11 h-11 rounded-full object-cover ring-2 ring-brand-100">
+                <img src="{{ imageUrl(auth()->user()->avatar) }}" class="w-11 h-11 rounded-full object-cover ring-2 ring-brand-100">
                 @else
                 <div class="w-11 h-11 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white font-bold text-sm flex items-center justify-center ring-2 ring-brand-100">
                     {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}

@@ -21,7 +21,7 @@
         @if($listing->images->count())
         <div class="grid grid-cols-3 gap-3 mb-8">
             @foreach($listing->images->take(6) as $img)
-            <img src="{{ Storage::url($img->image_path) }}" alt="" class="rounded-2xl object-cover aspect-video w-full shadow-sm hover:shadow-card transition-shadow duration-300">
+            <img src="{{ imageUrl($img->image_path) }}" alt="" class="rounded-2xl object-cover aspect-video w-full shadow-sm hover:shadow-card transition-shadow duration-300">
             @endforeach
         </div>
         @endif

@@ -32,7 +32,7 @@
         class="group block bg-white rounded-2xl border border-surface-100 hover:border-blue-300 hover:shadow-soft transition-all duration-300 overflow-hidden">
         <div class="aspect-[4/3] overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
             @if($service->image)
-            <img src="{{ Storage::url($service->image) }}" alt="{{ $service->name }}"
+            <img src="{{ imageUrl($service->image) }}" alt="{{ $service->name }}"
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
             @else
             <svg class="w-12 h-12 text-blue-300" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">

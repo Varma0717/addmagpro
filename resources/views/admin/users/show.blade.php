@@ -8,7 +8,7 @@
     <div class="card p-6 space-y-4">
         <div class="flex items-center gap-4">
             @if($user->avatar)
-            <img src="{{ Storage::url($user->avatar) }}" class="w-16 h-16 rounded-2xl object-cover ring-2 ring-brand-100">
+            <img src="{{ imageUrl($user->avatar) }}" class="w-16 h-16 rounded-2xl object-cover ring-2 ring-brand-100">
             @else
             <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white flex items-center justify-center text-2xl font-display font-bold shadow-soft">
                 {{ strtoupper(substr($user->name, 0, 1)) }}

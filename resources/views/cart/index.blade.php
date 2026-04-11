@@ -26,7 +26,7 @@
             <div class="card-hover p-4 flex gap-4" id="item-{{ $item->id }}">
                 @php $img = $item->product->images->first(); @endphp
                 @if($img)
-                <img src="{{ Storage::url($img->image_path) }}" class="w-20 h-20 object-cover rounded-xl flex-shrink-0" alt="">
+                <img src="{{ imageUrl($img->image_path) }}" class="w-20 h-20 object-cover rounded-xl flex-shrink-0" alt="">
                 @else
                 <div class="w-20 h-20 bg-surface-100 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg class="w-8 h-8 text-surface-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">

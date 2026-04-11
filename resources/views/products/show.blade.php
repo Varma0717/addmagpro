@@ -23,7 +23,7 @@
             @foreach($product->images as $i => $img)
             <img x-show="active === {{ $i }}"
                 x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                src="{{ Storage::url($img->image_path) }}" class="w-full h-full object-cover" alt="{{ $product->name }}">
+                src="{{ imageUrl($img->image_path) }}" class="w-full h-full object-cover" alt="{{ $product->name }}">
             @endforeach
         </div>
         @if($product->images->count() > 1)
@@ -32,7 +32,7 @@
             <button @click="active = {{ $i }}"
                 :class="active === {{ $i }} ? 'ring-2 ring-brand-400 ring-offset-2' : 'ring-1 ring-surface-200'"
                 class="w-18 h-18 flex-shrink-0 rounded-xl overflow-hidden transition-all duration-200">
-                <img src="{{ Storage::url($img->image_path) }}" class="w-full h-full object-cover">
+                <img src="{{ imageUrl($img->image_path) }}" class="w-full h-full object-cover">
             </button>
             @endforeach
         </div>

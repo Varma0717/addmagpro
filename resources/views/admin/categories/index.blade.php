@@ -34,7 +34,7 @@
             <tr class="hover:bg-surface-50 transition-colors">
                 <td class="table-cell">
                     @if($category->image)
-                    <img src="{{ Storage::url($category->image) }}" class="w-10 h-10 rounded-lg object-cover ring-1 ring-surface-200">
+                    <img src="{{ imageUrl($category->image) }}" class="w-10 h-10 rounded-lg object-cover ring-1 ring-surface-200">
                     @else
                     <div class="w-10 h-10 rounded-lg bg-surface-100 flex items-center justify-center text-surface-400">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

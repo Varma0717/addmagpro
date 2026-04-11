@@ -67,7 +67,7 @@
                 <div class="flex flex-wrap gap-3 mt-3">
                     @foreach($product->images as $img)
                     <div class="relative group">
-                        <img src="{{ Storage::url($img->image_path) }}" class="w-20 h-20 object-cover rounded-lg ring-1 ring-surface-200">
+                        <img src="{{ imageUrl($img->image_path) }}" class="w-20 h-20 object-cover rounded-lg ring-1 ring-surface-200">
                         <form method="POST" action="{{ route('admin.products.images.destroy', $img) }}">
                             @csrf @method('DELETE')
                             <button type="submit" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hover:bg-red-600 shadow-soft">
