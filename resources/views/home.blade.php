@@ -195,10 +195,10 @@
         @if($popularVendors->count() > 4)
         <div class="flex justify-center gap-2 mt-4">
             @for($i = 0; $i < ceil($popularVendors->count() / 4); $i++)
-            <button @click="vendorPage = {{ $i }}"
-                :class="vendorPage === {{ $i }} ? 'bg-brand-500 w-6' : 'bg-surface-300 w-2'"
-                class="h-2 rounded-full transition-all duration-300"></button>
-            @endfor
+                <button @click="vendorPage = {{ $i }}"
+                    :class="vendorPage === {{ $i }} ? 'bg-brand-500 w-6' : 'bg-surface-300 w-2'"
+                    class="h-2 rounded-full transition-all duration-300"></button>
+                @endfor
         </div>
         @endif
     </div>
