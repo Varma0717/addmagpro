@@ -87,12 +87,12 @@ class MigrateLegacyData extends Command
                         'email'             => $admin->email,
                         'phone'             => null,
                         'avatar'            => $admin->image,
-                        'email_verified_at' => $admin->email_verified_at,
+                        'email_verified_at' => $this->sanitizeDate($admin->email_verified_at),
                         'password'          => $admin->password,
                         'role'              => 'admin',
                         'is_active'         => true,
-                        'created_at'        => $admin->created_at,
-                        'updated_at'        => $admin->updated_at,
+                        'created_at'        => $this->sanitizeDate($admin->created_at, now()),
+                        'updated_at'        => $this->sanitizeDate($admin->updated_at, now()),
                     ]);
                     $this->info("    Admin '{$admin->name}' → user #{$id}");
                 }
@@ -134,7 +134,7 @@ class MigrateLegacyData extends Command
                     'wallet_balance' => 0, // will be computed in wallet step
                     'role'          => 'user',
                     'is_active'     => true,
-                    'created_at'    => $user->created_at ?? $user->joined_date ?? now(),
+                    'created_at'    => $this->sanitizeDate($user->created_at, $this->sanitizeDate($user->joined_date, now())),
                     'updated_at'    => now(),
                 ]);
 
@@ -182,7 +182,7 @@ class MigrateLegacyData extends Command
                 'ifsc'                  => $v->ifsc,
                 'status'                => $v->status ?? 'Pending',
                 'vendor_wallet'         => $v->vendor_wallet ?? 0,
-                'created_at'            => $v->created_at ?? now(),
+                'created_at'            => $this->sanitizeDate($v->created_at, now()),
                 'updated_at'            => now(),
             ]);
             $this->vendorIdMap[$v->vendor_id] = $newId;
@@ -210,7 +210,7 @@ class MigrateLegacyData extends Command
                         'type'      => 'ecommerce',
                         'image'     => $cat->ImageURL,
                         'is_active' => true,
-                        'created_at' => $cat->CreatedAt ?? now(),
+                        'created_at' => $this->sanitizeDate($cat->CreatedAt, now()),
                         'updated_at' => now(),
                     ]);
                     $this->categoryIdMap[$cat->id] = $newId;
@@ -231,7 +231,7 @@ class MigrateLegacyData extends Command
                         'type'      => 'service',
                         'image'     => $svc->service_image,
                         'is_active' => true,
-                        'created_at' => $svc->created_at ?? now(),
+                        'created_at' => $this->sanitizeDate($svc->created_at, now()),
                         'updated_at' => now(),
                     ]);
                     $count++;
@@ -251,7 +251,7 @@ class MigrateLegacyData extends Command
                         'type'      => 'service',
                         'image'     => $store->store_image,
                         'is_active' => true,
-                        'created_at' => $store->created_at ?? now(),
+                        'created_at' => $this->sanitizeDate($store->created_at, now()),
                         'updated_at' => now(),
                     ]);
                     $count++;
@@ -271,7 +271,7 @@ class MigrateLegacyData extends Command
                         'type'      => 'service',
                         'image'     => $cl->classified_image,
                         'is_active' => true,
-                        'created_at' => $cl->created_at ?? now(),
+                        'created_at' => $this->sanitizeDate($cl->created_at, now()),
                         'updated_at' => now(),
                     ]);
                     $count++;
@@ -301,7 +301,7 @@ class MigrateLegacyData extends Command
                 'brand_name'  => $b->brand_name,
                 'vendor_id'   => $this->vendorIdMap[$b->vendor_id] ?? null,
                 'image'       => $b->ImageURL,
-                'created_at'  => $b->created_at ?? now(),
+                'created_at'  => $this->sanitizeDate($b->created_at, now()),
                 'updated_at'  => now(),
             ]);
             $this->brandIdMap[$b->id] = $newId;
@@ -345,7 +345,7 @@ class MigrateLegacyData extends Command
                     'discount_price'    => $p->purchase_price > 0 ? $p->purchase_price : null,
                     'stock'             => 100, // Legacy has no stock — default
                     'is_active'         => true,
-                    'created_at'        => $p->created_at ?? now(),
+                    'created_at'        => $this->sanitizeDate($p->created_at, now()),
                     'updated_at'        => now(),
                 ]);
 
@@ -406,7 +406,7 @@ class MigrateLegacyData extends Command
                 'city'          => $bl->district,
                 'phone'         => $bl->member_phone,
                 'is_approved'   => ($bl->status ?? '0') === '1',
-                'created_at'    => $bl->enrolled_date ?? now(),
+                'created_at'    => $this->sanitizeDate($bl->enrolled_date, now()),
                 'updated_at'    => now(),
             ]);
         }
@@ -458,7 +458,7 @@ class MigrateLegacyData extends Command
                 'shipping_address' => $shippingAddress,
                 'payment_method'   => 'cod',
                 'payment_status'   => ($o->confirmation_status == 0) ? 'paid' : 'pending',
-                'created_at'       => $o->ordered_date ?? now(),
+                'created_at'       => $this->sanitizeDate($o->ordered_date, now()),
                 'updated_at'       => now(),
             ]);
 
@@ -513,7 +513,7 @@ class MigrateLegacyData extends Command
                         'user_id'    => $userId,
                         'product_id' => $productId,
                         'quantity'   => $c->quantity ?? 1,
-                        'created_at' => $c->created_at ?? now(),
+                        'created_at' => $this->sanitizeDate($c->created_at, now()),
                         'updated_at' => now(),
                     ]);
                     $migrated++;
@@ -542,7 +542,7 @@ class MigrateLegacyData extends Command
                     DB::table('wishlists')->insert([
                         'user_id'    => $userId,
                         'product_id' => $productId,
-                        'created_at' => $w->created_at ?? now(),
+                        'created_at' => $this->sanitizeDate($w->created_at, now()),
                         'updated_at' => now(),
                     ]);
                     $migrated++;
@@ -571,7 +571,7 @@ class MigrateLegacyData extends Command
                         'link_value' => $b->banner_url,
                         'placement'  => $placement,
                         'is_active'  => true,
-                        'created_at' => $b->created_at ?? now(),
+                        'created_at' => $this->sanitizeDate($b->created_at, now()),
                         'updated_at' => now(),
                     ]);
                 }
@@ -590,7 +590,7 @@ class MigrateLegacyData extends Command
                         'link_url'  => $a->ads_banner_url,
                         'placement' => 'homepage',
                         'is_active' => true,
-                        'created_at' => $a->created_at ?? now(),
+                        'created_at' => $this->sanitizeDate($a->created_at, now()),
                         'updated_at' => now(),
                     ]);
                 }
@@ -606,7 +606,7 @@ class MigrateLegacyData extends Command
                     DB::table('event_banners')->insert([
                         'event_banner_name'  => $e->event_banner_name,
                         'event_banner_image' => $e->event_banner_image,
-                        'created_at'         => $e->created_at ?? now(),
+                        'created_at'         => $this->sanitizeDate($e->created_at, now()),
                         'updated_at'         => now(),
                     ]);
                 }
@@ -623,7 +623,7 @@ class MigrateLegacyData extends Command
                         'gallery_name'  => $g->gallery_name,
                         'gallery_url'   => $g->gallery_url,
                         'gallery_image' => $g->gallery_image,
-                        'created_at'    => $g->created_at ?? now(),
+                        'created_at'    => $this->sanitizeDate($g->created_at, now()),
                         'updated_at'    => now(),
                     ]);
                 }
@@ -640,7 +640,7 @@ class MigrateLegacyData extends Command
                         'gadget_gallery_name'  => $g->gadget_gallery_name,
                         'gadget_gallery_url'   => $g->gadget_gallery_url,
                         'gadget_gallery_image' => $g->gadget_gallery_image,
-                        'created_at'           => $g->created_at ?? now(),
+                        'created_at'           => $this->sanitizeDate($g->created_at, now()),
                         'updated_at'           => now(),
                     ]);
                 }
@@ -656,7 +656,7 @@ class MigrateLegacyData extends Command
                     DB::table('speciality_store_images')->insert([
                         'store_name'  => $s->store_name,
                         'store_image' => $s->store_image,
-                        'created_at'  => $s->created_at ?? now(),
+                        'created_at'  => $this->sanitizeDate($s->created_at, now()),
                         'updated_at'  => now(),
                     ]);
                 }
@@ -674,7 +674,7 @@ class MigrateLegacyData extends Command
                     DB::table('vendor_banners')->insert([
                         'vendor_id'  => $vendorId,
                         'image_url'  => $vb->ImageURL,
-                        'created_at' => $vb->created_at ?? now(),
+                        'created_at' => $this->sanitizeDate($vb->created_at, now()),
                         'updated_at' => now(),
                     ]);
                 }
@@ -708,7 +708,7 @@ class MigrateLegacyData extends Command
                     'type'       => 'fixed',
                     'value'      => 0, // Legacy has no value info
                     'is_active'  => ($c->status === 'Active'),
-                    'created_at' => $c->created_at ?? now(),
+                    'created_at' => $this->sanitizeDate($c->created_at, now()),
                     'updated_at' => now(),
                 ]);
                 $couponMap[$code] = $couponId;
@@ -725,8 +725,8 @@ class MigrateLegacyData extends Command
                     DB::table('user_coupons')->insert([
                         'user_id'    => $userId,
                         'coupon_id'  => $couponMap[$code],
-                        'used_at'    => ($c->status === 'Expired') ? ($c->created_at ?? now()) : null,
-                        'created_at' => $c->created_at ?? now(),
+                        'used_at'    => ($c->status === 'Expired') ? $this->sanitizeDate($c->created_at, now()) : null,
+                        'created_at' => $this->sanitizeDate($c->created_at, now()),
                         'updated_at' => now(),
                     ]);
                 }
@@ -751,7 +751,7 @@ class MigrateLegacyData extends Command
                         'charity'       => $aw->charity ?? 0,
                         'monthly_pool'  => $aw->monthly_pool ?? 0,
                         'company'       => $aw->company ?? 0,
-                        'created_at'    => $aw->created_at ?? now(),
+                        'created_at'    => $this->sanitizeDate($aw->created_at, now()),
                         'updated_at'    => now(),
                     ]);
                 }
@@ -771,7 +771,7 @@ class MigrateLegacyData extends Command
                             'user_id'         => $r->user_id,
                             'balance'         => $r->balance ?? 0,
                             'purchase_income' => $r->purchase_income ?? 0,
-                            'created_at'      => $r->created_at ?? now(),
+                            'created_at'      => $this->sanitizeDate($r->created_at, now()),
                             'updated_at'      => now(),
                         ];
                         $bar->advance();
@@ -809,7 +809,7 @@ class MigrateLegacyData extends Command
                         'back_two_back'   => $r->back_two_back ?? 0,
                         'pool_commission' => $r->pool_commission ?? 0,
                         'cashback'        => $r->cashback ?? 0,
-                        'created_at'      => $r->created_at ?? now(),
+                        'created_at'      => $this->sanitizeDate($r->created_at, now()),
                         'updated_at'      => now(),
                     ]);
                 }
@@ -833,7 +833,7 @@ class MigrateLegacyData extends Command
             DB::table($newTable)->insert([
                 'user_id'    => $r->user_id,
                 'balance'    => $r->balance ?? 0,
-                'created_at' => $r->created_at ?? now(),
+                'created_at' => $this->sanitizeDate($r->created_at, now()),
                 'updated_at' => now(),
             ]);
         }
@@ -882,8 +882,8 @@ class MigrateLegacyData extends Command
                     DB::table('states')->insert([
                         'id'         => $s->state_id,
                         'state_name' => $s->state_name,
-                        'created_at' => $s->created_at ?? now(),
-                        'updated_at' => $s->updated_at ?? now(),
+                        'created_at' => $this->sanitizeDate($s->created_at, now()),
+                        'updated_at' => $this->sanitizeDate($s->updated_at, now()),
                     ]);
                 }
             }
@@ -899,7 +899,7 @@ class MigrateLegacyData extends Command
                         'id'            => $d->district_id,
                         'state_id'      => $d->state_id,
                         'district_name' => $d->district_name,
-                        'created_at'    => $d->created_at ?? now(),
+                        'created_at'    => $this->sanitizeDate($d->created_at, now()),
                         'updated_at'    => now(),
                     ]);
                 }
@@ -919,7 +919,7 @@ class MigrateLegacyData extends Command
                         'franchise_phone'      => $f->franchise_phone,
                         'franchise_email'      => $f->franchise_email,
                         'franchise_type'       => $f->franchise_type,
-                        'franchise_start_date' => $f->franchise_start_date,
+                        'franchise_start_date' => $this->sanitizeDate($f->franchise_start_date),
                         'franchise_status'     => $f->franchise_status,
                         'franchise_revenue'    => $f->franchise_revenue ?? 0,
                         'franchise_expenses'   => $f->franchise_expenses ?? 0,
@@ -941,7 +941,7 @@ class MigrateLegacyData extends Command
                         'user_id'       => $this->userIdMap[$k->userid] ?? $k->userid,
                         'full_name'     => $k->full_name,
                         'kyc_status'    => $k->kyc_status ?? 'Pending',
-                        'approved_date' => $k->approved_date,
+                        'approved_date' => $this->sanitizeDate($k->approved_date),
                         'created_at'    => now(),
                         'updated_at'    => now(),
                     ]);
@@ -962,7 +962,7 @@ class MigrateLegacyData extends Command
                         'account_number' => $b->account_number,
                         'ifsc'           => $b->ifsc,
                         'pancard_number' => $b->pancard_number,
-                        'created_at'     => $b->created_at ?? now(),
+                        'created_at'     => $this->sanitizeDate($b->created_at, now()),
                         'updated_at'     => now(),
                     ]);
                 }
@@ -978,7 +978,7 @@ class MigrateLegacyData extends Command
                     DB::table('active_users')->insert([
                         'user_id'    => $this->userIdMap[$au->user_id] ?? $au->user_id,
                         'user_name'  => $au->user_name,
-                        'created_at' => $au->created_at ?? now(),
+                        'created_at' => $this->sanitizeDate($au->created_at, now()),
                         'updated_at' => now(),
                     ]);
                 }
@@ -994,7 +994,7 @@ class MigrateLegacyData extends Command
                     DB::table('home_page_headings')->insert([
                         'home_page_name' => $h->home_page_name,
                         'heading'        => $h->heading,
-                        'created_at'     => $h->created_at ?? now(),
+                        'created_at'     => $this->sanitizeDate($h->created_at, now()),
                         'updated_at'     => now(),
                     ]);
                 }
@@ -1025,7 +1025,7 @@ class MigrateLegacyData extends Command
                         'ifsc_code'         => $d->ifsc_code,
                         'discount_margin'   => $d->discount_margin,
                         'withdrawal_amount' => $d->withdrawal_amount ?? 0,
-                        'created_at'        => $d->created_at ?? now(),
+                        'created_at'        => $this->sanitizeDate($d->created_at, now()),
                         'updated_at'        => now(),
                     ]);
                 }
@@ -1046,7 +1046,7 @@ class MigrateLegacyData extends Command
                         'discount_margin'  => $d->discount_margin ?? 0,
                         'total_amount'     => $d->total_amount ?? 0,
                         'vendor_commision' => $d->vendor_commision ?? 0,
-                        'created_at'       => $d->created_at ?? now(),
+                        'created_at'       => $this->sanitizeDate($d->created_at, now()),
                         'updated_at'       => now(),
                     ]);
                 }
@@ -1062,7 +1062,7 @@ class MigrateLegacyData extends Command
                     DB::table('pin_systems')->insert([
                         'user_id'    => $this->userIdMap[$p->user_id] ?? $p->user_id,
                         'total_pins' => $p->total_pins ?? 0,
-                        'created_at' => $p->created_at ?? now(),
+                        'created_at' => $this->sanitizeDate($p->created_at, now()),
                         'updated_at' => now(),
                     ]);
                 }
@@ -1082,7 +1082,7 @@ class MigrateLegacyData extends Command
                         'mobile_number'  => $r->mobile_number,
                         'withdraw_amount' => $r->withdraw_amount ?? 0,
                         'status'         => $r->status ?? 'pending',
-                        'created_at'     => $r->created_at ?? now(),
+                        'created_at'     => $this->sanitizeDate($r->created_at, now()),
                         'updated_at'     => now(),
                     ]);
                 }
@@ -1100,10 +1100,10 @@ class MigrateLegacyData extends Command
                         'amount'          => $r->Amount ?? 0,
                         'currency'        => $r->Currency ?? 'INR',
                         'payment_method'  => $r->PaymentMethod,
-                        'request_date'    => $r->RequestDate,
+                        'request_date'    => $this->sanitizeDate($r->RequestDate),
                         'status'          => strtolower($r->Status ?? 'pending'),
-                        'completion_date' => $r->CompletionDate,
-                        'created_at'      => $r->RequestDate ?? now(),
+                        'completion_date' => $this->sanitizeDate($r->CompletionDate),
+                        'created_at'      => $this->sanitizeDate($r->RequestDate, now()),
                         'updated_at'      => now(),
                     ]);
                 }
@@ -1157,8 +1157,8 @@ class MigrateLegacyData extends Command
                         'body'       => $n->title ?? '',
                         'type'       => 'admin',
                         'is_read'    => $n->read_status ?? false,
-                        'created_at' => $n->created_at ?? now(),
-                        'updated_at' => $n->updated_at ?? now(),
+                        'created_at' => $this->sanitizeDate($n->created_at, now()),
+                        'updated_at' => $this->sanitizeDate($n->updated_at, now()),
                     ]);
                 }
             }
@@ -1228,6 +1228,18 @@ class MigrateLegacyData extends Command
     private function legacyTableExists(string $table): bool
     {
         return Schema::hasTable($table);
+    }
+
+    /**
+     * Sanitize a date value from legacy data.
+     * Converts '0000-00-00 00:00:00', empty strings, and other invalid dates to the fallback.
+     */
+    private function sanitizeDate($value, $fallback = null)
+    {
+        if ($value === null || $value === '' || $value === '0000-00-00 00:00:00' || $value === '0000-00-00') {
+            return $fallback;
+        }
+        return $value;
     }
 
     private function uniqueSlug(string $table, string $name): string
