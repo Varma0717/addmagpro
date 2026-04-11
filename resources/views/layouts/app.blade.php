@@ -7,6 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name')) — Local Commerce &amp; Deals</title>
     <meta name="description" content="@yield('description', 'Shop local products, discover services, earn wallet rewards and referral bonuses.')">
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/favicon.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|outfit:500,600,700" rel="stylesheet" />
     @php
@@ -32,13 +33,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex items-center h-16 gap-4">
                 {{-- Logo --}}
-                <a href="{{ route('home') }}" class="flex items-center gap-2 flex-shrink-0 group">
-                    <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-sm">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                    </span>
-                    <span class="font-display text-xl font-bold text-surface-900 group-hover:text-brand-600 transition-colors">Add<span class="text-brand-500">Mag</span>Pro</span>
+                <a href="{{ route('home') }}" class="flex items-center flex-shrink-0">
+                    <img src="{{ asset('assets/images/logo.png') }}" alt="AddMagPro" class="h-9 w-auto">
                 </a>
 
                 {{-- Search --}}
@@ -219,12 +215,7 @@
                 {{-- Brand --}}
                 <div class="col-span-2">
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </span>
-                        <span class="font-display text-xl font-bold text-white">Add<span class="text-brand-400">Mag</span>Pro</span>
+                        <img src="{{ asset('assets/images/logo.png') }}" alt="AddMagPro" class="h-9 w-auto brightness-0 invert">
                     </div>
                     <p class="text-surface-400 text-sm leading-relaxed max-w-sm">We are a leading E-commerce and Local Search Engine platform designed to help businesses reach a broader audience and grow your customer base. One-stop shop for consumers and a lucrative marketplace for vendors.</p>
                     {{-- Social --}}

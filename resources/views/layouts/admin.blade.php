@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin') — AddMagPro</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/favicon.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|outfit:500,600,700" rel="stylesheet" />
     @php
@@ -31,15 +32,8 @@
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
         {{-- Logo --}}
         <div class="flex items-center gap-3 px-5 py-5 border-b border-surface-700/50">
-            <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-sm">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-            </span>
-            <div>
-                <span class="font-display text-lg font-bold text-white">Add<span class="text-brand-400">Mag</span>Pro</span>
-                <span class="block text-[10px] uppercase tracking-widest text-surface-500 font-medium">Admin Panel</span>
-            </div>
+            <img src="{{ asset('assets/images/logo.png') }}" alt="AddMagPro" class="h-9 w-auto brightness-0 invert">
+            <span class="block text-[10px] uppercase tracking-widest text-surface-500 font-medium">Admin Panel</span>
         </div>
 
         {{-- Nav --}}

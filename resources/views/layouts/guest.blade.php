@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'AddMagPro') }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/favicon.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|outfit:500,600,700" rel="stylesheet" />
     @php
@@ -28,13 +29,8 @@
         {{-- Left decorative panel --}}
         <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 relative overflow-hidden items-center justify-center">
             <div class="relative z-10 text-center px-12">
-                <div class="flex items-center justify-center gap-3 mb-8">
-                    <span class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                    </span>
-                    <span class="font-display text-3xl font-bold text-white">Add<span class="text-brand-200">Mag</span>Pro</span>
+                <div class="flex items-center justify-center mb-8">
+                    <img src="{{ asset('assets/images/logo.png') }}" alt="AddMagPro" class="h-12 w-auto brightness-0 invert">
                 </div>
                 <p class="text-white/80 text-lg leading-relaxed max-w-md mx-auto">Your local commerce super app. Shop products, discover services, earn wallet rewards and referral bonuses.</p>
             </div>
@@ -45,13 +41,8 @@
 
         {{-- Right form panel --}}
         <div class="flex-1 flex flex-col items-center justify-center py-12 px-6 bg-surface-50">
-            <a href="/" class="lg:hidden flex items-center gap-2 mb-8">
-                <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                </span>
-                <span class="font-display text-xl font-bold text-surface-900">Add<span class="text-brand-500">Mag</span>Pro</span>
+            <a href="/" class="lg:hidden flex items-center mb-8">
+                <img src="{{ asset('assets/images/logo.png') }}" alt="AddMagPro" class="h-9 w-auto">
             </a>
 
             <div class="w-full max-w-md">
