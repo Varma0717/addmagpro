@@ -93,10 +93,5 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  web:
-    generate: true
-    image_path: "assets/branding/logo_square.png"
-    background_color: "#FFFFFF"
-    theme_color: "#FF7F11"
   image_path: "assets/branding/logo_square.png"
   remove_alpha_ios: true
