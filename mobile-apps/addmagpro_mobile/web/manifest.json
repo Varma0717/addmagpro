@@ -3,7 +3,7 @@
     "short_name": "AddMagPro",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FFF7ED",
+    "background_color": "#FFFFFF",
     "theme_color": "#FF7F11",
     "description": "AddMagPro referral-first mobile and web experience.",
     "orientation": "portrait-primary",
