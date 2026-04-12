@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CatalogController;
+use App\Http\Controllers\Api\V1\CheckoutController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -39,12 +41,23 @@ Route::prefix('v1')->group(function (): void {
 
         Route::get('/account/orders', [OrderController::class, 'index']);
         Route::get('/account/orders/{order}', [OrderController::class, 'show']);
+
+        Route::get('/account/cart', [CartController::class, 'index']);
+        Route::post('/account/cart/items', [CartController::class, 'store']);
+        Route::patch('/account/cart/items/{item}', [CartController::class, 'update']);
+        Route::delete('/account/cart/items/{item}', [CartController::class, 'destroy']);
+        Route::post('/account/cart/coupon/validate', [CartController::class, 'validateCoupon']);
+
+        Route::post('/account/checkout/razorpay/create', [CheckoutController::class, 'createRazorpayOrder']);
+        Route::post('/account/checkout/place-order', [CheckoutController::class, 'placeOrder']);
     });
 
     Route::get('/categories', [CatalogController::class, 'categories']);
+    Route::get('/home', [CatalogController::class, 'home']);
     Route::get('/products', [CatalogController::class, 'products']);
     Route::get('/products/{slug}', [CatalogController::class, 'productShow']);
     Route::get('/listings', [CatalogController::class, 'listings']);
     Route::get('/listings/{slug}', [CatalogController::class, 'listingShow']);
     Route::get('/search', [CatalogController::class, 'search'])->middleware('throttle:60,1');
+    Route::get('/search/mixed', [CatalogController::class, 'searchMixed'])->middleware('throttle:60,1');
 });
