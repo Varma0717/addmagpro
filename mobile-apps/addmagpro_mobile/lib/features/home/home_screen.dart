@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../app_state.dart';
+import '../notifications/presentation/notifications_screen.dart';
+import '../orders/presentation/orders_screen.dart';
+import '../profile/presentation/profile_screen.dart';
 import '../referral/presentation/referral_screen.dart';
 import '../wallet/presentation/wallet_screen.dart';
 
@@ -19,18 +22,46 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = widget.appState.currentUser;
-    final referralCode = user?.referralCode ?? 'ADMPRO01';
+    final token = widget.appState.token;
+
+    if (token == null) {
+      return const SizedBox.shrink();
+    }
 
     final pages = <Widget>[
       _DashboardView(appState: widget.appState),
-      ReferralScreen(referralCode: referralCode, memberName: user?.name ?? 'Member'),
-      const WalletScreen(),
-      _ProfileView(appState: widget.appState),
+      ReferralScreen(token: token, memberName: user?.name ?? 'Member'),
+      WalletScreen(token: token),
+      ProfileScreen(appState: widget.appState),
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(_titleForIndex(_currentIndex)),
+        actions: _currentIndex == 0
+            ? <Widget>[
+                IconButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => NotificationsScreen(token: token),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.notifications_none),
+                ),
+                IconButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => OrdersScreen(token: token),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.receipt_long_outlined),
+                ),
+              ]
+            : null,
       ),
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: NavigationBar(
@@ -96,63 +127,24 @@ class _DashboardView extends StatelessWidget {
                 'Referral code: ${user?.referralCode ?? '-'}',
                 style: const TextStyle(color: Colors.white),
               ),
+              const SizedBox(height: 12),
+              Text(
+                'Wallet balance: ₹${(user?.walletBalance ?? 0).toStringAsFixed(2)}',
+                style: const TextStyle(color: Colors.white),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 18),
         const Text(
-          'Live modules in progress',
+          'Account shortcuts',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 10),
-        const _FeatureTile(title: 'Referral history and team API connected next'),
-        const _FeatureTile(title: 'Wallet transactions and withdrawal API connected next'),
-        const _FeatureTile(title: 'Notifications, orders, and profile update APIs added in Laravel'),
+        const _FeatureTile(title: 'Referrals are live from the account API'),
+        const _FeatureTile(title: 'Wallet balance, transactions, and withdraw requests are live'),
+        const _FeatureTile(title: 'Notifications and orders are available from the top-right actions'),
       ],
-    );
-  }
-}
-
-class _ProfileView extends StatelessWidget {
-  const _ProfileView({required this.appState});
-
-  final AppState appState;
-
-  @override
-  Widget build(BuildContext context) {
-    final user = appState.currentUser;
-
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(user?.name ?? 'Member', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 8),
-                Text(user?.phone ?? '-', style: const TextStyle(color: Color(0xFF6B7280))),
-                const SizedBox(height: 4),
-                Text(user?.email ?? 'No email added', style: const TextStyle(color: Color(0xFF6B7280))),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          FilledButton.icon(
-            onPressed: () => appState.logout(),
-            icon: const Icon(Icons.logout),
-            label: const Text('Logout'),
-          ),
-        ],
-      ),
     );
   }
 }

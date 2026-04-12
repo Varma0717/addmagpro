@@ -38,6 +38,20 @@ class ApiClient {
     return _decode(response);
   }
 
+  Future<Map<String, dynamic>> patch(
+    String path, {
+    Map<String, dynamic>? body,
+    String? bearerToken,
+  }) async {
+    final response = await _http.patch(
+      _uri(path),
+      headers: _headers(bearerToken),
+      body: jsonEncode(body ?? <String, dynamic>{}),
+    );
+
+    return _decode(response);
+  }
+
   Map<String, String> _headers(String? bearerToken) {
     return <String, String>{
       'Accept': 'application/json',

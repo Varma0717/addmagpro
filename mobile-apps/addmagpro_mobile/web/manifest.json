@@ -1,11 +1,11 @@
 {
-    "name": "addmagpro_mobile",
-    "short_name": "addmagpro_mobile",
+    "name": "AddMagPro",
+    "short_name": "AddMagPro",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFF7ED",
+    "theme_color": "#FF7F11",
+    "description": "AddMagPro referral-first mobile and web experience.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

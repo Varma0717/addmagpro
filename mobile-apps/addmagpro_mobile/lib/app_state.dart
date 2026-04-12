@@ -16,6 +16,7 @@ class AppState extends ChangeNotifier {
   bool get booting => _booting;
   bool get busy => _busy;
   bool get isAuthenticated => _token != null && _currentUser != null;
+  String? get token => _token;
   AuthUser? get currentUser => _currentUser;
 
   Future<void> initialize() async {
@@ -99,6 +100,21 @@ class AppState extends ChangeNotifier {
 
     _token = null;
     _currentUser = null;
+    notifyListeners();
+  }
+
+  Future<void> refreshProfile() async {
+    if (_token == null) {
+      return;
+    }
+
+    final me = await _authRepository.me(_token!);
+    _currentUser = me;
+    notifyListeners();
+  }
+
+  void replaceCurrentUser(AuthUser user) {
+    _currentUser = user;
     notifyListeners();
   }
 }

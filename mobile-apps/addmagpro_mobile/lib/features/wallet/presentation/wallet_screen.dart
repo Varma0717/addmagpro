@@ -1,108 +1,262 @@
 import 'package:flutter/material.dart';
 
-class WalletScreen extends StatelessWidget {
-  const WalletScreen({super.key});
+import '../../../core/network/api_client.dart';
+import '../data/wallet_repository.dart';
+import '../models/wallet_models.dart';
+
+class WalletScreen extends StatefulWidget {
+  const WalletScreen({super.key, required this.token});
+
+  final String token;
 
   @override
-  Widget build(BuildContext context) {
-    const transactions = <_WalletTransactionItem>[
-      _WalletTransactionItem(
-        description: 'Referral bonus credited',
-        timestamp: '2 hours ago',
-        amount: 500,
-        isCredit: true,
-      ),
-      _WalletTransactionItem(
-        description: 'Withdrawal request submitted',
-        timestamp: 'Yesterday',
-        amount: 1200,
-        isCredit: false,
-      ),
-      _WalletTransactionItem(
-        description: 'First purchase incentive',
-        timestamp: '3 days ago',
-        amount: 750,
-        isCredit: true,
-      ),
-    ];
+  State<WalletScreen> createState() => _WalletScreenState();
+}
 
-    const withdrawRequests = <_WithdrawRequestItem>[
-      _WithdrawRequestItem(requestNo: 'WDR-82D8AC19', amount: 1200, status: 'pending'),
-      _WithdrawRequestItem(requestNo: 'WDR-AC39FE11', amount: 950, status: 'approved'),
-    ];
+class _WalletScreenState extends State<WalletScreen> {
+  late final WalletRepository _repository;
+  bool _loading = true;
+  bool _submitting = false;
+  String? _error;
+  WalletOverview? _wallet;
 
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: <Widget>[
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: const Color(0xFF111827),
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  @override
+  void initState() {
+    super.initState();
+    _repository = WalletRepository(apiClient: ApiClient());
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final wallet = await _repository.fetch(widget.token);
+      if (!mounted) return;
+      setState(() => _wallet = wallet);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _requestWithdraw() async {
+    final controller = TextEditingController();
+    final remarksController = TextEditingController();
+    final amount = await showDialog<double>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Withdraw Request'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text('Wallet balance', style: TextStyle(color: Color(0xFF9CA3AF))),
-              SizedBox(height: 10),
-              Text(
-                '₹18,340.00',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 34,
-                ),
+              TextField(
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Amount'),
               ),
-              SizedBox(height: 8),
-              Text(
-                'Temporary mock data while API modules are being completed.',
-                style: TextStyle(color: Color(0xFFD1D5DB), height: 1.4),
+              const SizedBox(height: 12),
+              TextField(
+                controller: remarksController,
+                decoration: const InputDecoration(labelText: 'Remarks (optional)'),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  backgroundColor: Colors.white,
-                ),
-                child: const Text('Top up'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                onPressed: () {},
-                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                child: const Text('Withdraw'),
-              ),
+          actions: <Widget>[
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop(double.tryParse(controller.text.trim()));
+              },
+              child: const Text('Submit'),
             ),
           ],
-        ),
-        const SizedBox(height: 22),
-        Text(
-          'Recent transactions',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+        );
+      },
+    );
+
+    if (amount == null) {
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+
+    try {
+      await _repository.submitWithdraw(
+        widget.token,
+        amount: amount,
+        remarks: remarksController.text.trim(),
+      );
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Withdraw request submitted')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
+  }
+
+  Future<void> _createTopupOrder() async {
+    final amount = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Create Top-up Order'),
+          content: const Text('Select a top-up amount. Payment verification can use the returned Razorpay order id.'),
+          actions: <Widget>[
+            for (final option in _wallet?.presetAmounts ?? <int>[100, 200, 500])
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(option),
+                child: Text('₹$option'),
               ),
+          ],
+        );
+      },
+    );
+
+    if (amount == null) return;
+
+    try {
+      final order = await _repository.createTopupOrder(widget.token, amount: amount);
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Razorpay Order Created'),
+          content: Text('Order ID: ${order.orderId}\nAmount: ${order.amount / 100} ${order.currency}\nKey: ${order.keyId}'),
+          actions: <Widget>[
+            FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+          ],
         ),
-        const SizedBox(height: 12),
-        for (final transaction in transactions) _WalletTransactionCard(item: transaction),
-        const SizedBox(height: 8),
-        Text(
-          'Withdraw requests',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error.toString());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(_error!, style: const TextStyle(color: Color(0xFFB42318))),
+        ),
+      );
+    }
+
+    final wallet = _wallet;
+    if (wallet == null) {
+      return const Center(child: Text('Wallet data unavailable'));
+    }
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111827),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text('Wallet balance', style: TextStyle(color: Color(0xFF9CA3AF))),
+                const SizedBox(height: 10),
+                Text(
+                  '₹${wallet.balance.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 34,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Live account data from your AddMagPro wallet.',
+                  style: TextStyle(color: Color(0xFFD1D5DB), height: 1.4),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _createTopupOrder,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                    backgroundColor: Colors.white,
+                  ),
+                  child: const Text('Top up'),
+                ),
               ),
-        ),
-        const SizedBox(height: 12),
-        for (final withdrawRequest in withdrawRequests) _WithdrawCard(item: withdrawRequest),
-      ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _submitting ? null : _requestWithdraw,
+                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                  child: Text(_submitting ? 'Submitting...' : 'Withdraw'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+          Text(
+            'Recent transactions',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 12),
+          if (wallet.transactions.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('No transactions found'),
+            ),
+          for (final transaction in wallet.transactions) _WalletTransactionCard(item: transaction),
+          const SizedBox(height: 8),
+          Text(
+            'Withdraw requests',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 12),
+          if (wallet.withdrawRequests.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('No withdraw requests yet'),
+            ),
+          for (final withdrawRequest in wallet.withdrawRequests) _WithdrawCard(item: withdrawRequest),
+        ],
+      ),
     );
   }
 }
@@ -110,7 +264,7 @@ class WalletScreen extends StatelessWidget {
 class _WalletTransactionCard extends StatelessWidget {
   const _WalletTransactionCard({required this.item});
 
-  final _WalletTransactionItem item;
+  final WalletTransactionItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +297,7 @@ class _WalletTransactionCard extends StatelessWidget {
               children: <Widget>[
                 Text(item.description, style: const TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text(item.timestamp, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12)),
+                Text(_formatDate(item.createdAt), style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12)),
               ],
             ),
           ),
@@ -158,12 +312,18 @@ class _WalletTransactionCard extends StatelessWidget {
       ),
     );
   }
+
+  String _formatDate(DateTime? value) {
+    if (value == null) return '-';
+    final local = value.toLocal();
+    return '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
+  }
 }
 
 class _WithdrawCard extends StatelessWidget {
   const _WithdrawCard({required this.item});
 
-  final _WithdrawRequestItem item;
+  final WithdrawRequestItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -216,30 +376,4 @@ class _WithdrawCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _WalletTransactionItem {
-  const _WalletTransactionItem({
-    required this.description,
-    required this.timestamp,
-    required this.amount,
-    required this.isCredit,
-  });
-
-  final String description;
-  final String timestamp;
-  final double amount;
-  final bool isCredit;
-}
-
-class _WithdrawRequestItem {
-  const _WithdrawRequestItem({
-    required this.requestNo,
-    required this.amount,
-    required this.status,
-  });
-
-  final String requestNo;
-  final double amount;
-  final String status;
 }
