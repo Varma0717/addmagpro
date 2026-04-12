@@ -16,11 +16,6 @@
             @if($banner->link_value)
             <a href="{{ $banner->link_value }}" class="absolute inset-0"></a>
             @endif
-            @if($banner->title)
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-8 py-6">
-                <p class="text-white font-display text-xl md:text-2xl font-bold">{{ $banner->title }}</p>
-            </div>
-            @endif
         </div>
         @endforeach
     </div>
