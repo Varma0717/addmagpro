@@ -14,9 +14,10 @@ class AdminUserSeeder extends Seeder
         $password = env('ADMIN_DEFAULT_PASSWORD', 'ChangeMe@123');
 
         User::updateOrCreate(
-            ['email' => 'admin@admagpro.com'],
+            ['phone' => '9999999999'],
             [
                 'name'          => 'Admin',
+                'email'         => 'admin@admagpro.com',
                 'phone'         => '9999999999',
                 'password'      => Hash::make($password),
                 'role'          => 'admin',

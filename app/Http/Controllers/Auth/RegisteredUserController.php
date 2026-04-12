@@ -35,8 +35,8 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name'          => ['required', 'string', 'max:255'],
-            'phone'         => ['nullable', 'string', 'max:20'],
-            'email'         => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
+            'phone'         => ['required', 'string', 'max:20', 'unique:' . User::class],
+            'email'         => ['nullable', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password'      => ['required', 'confirmed', Rules\Password::defaults()],
             'referral_code' => ['nullable', 'string', 'exists:users,referral_code'],
         ]);
@@ -49,7 +49,7 @@ class RegisteredUserController extends Controller
         $user = User::create([
             'name'          => $request->name,
             'phone'         => $request->phone,
-            'email'         => $request->email,
+            'email'         => $request->filled('email') ? strtolower($request->email) : null,
             'password'      => Hash::make($request->password),
             'referral_code' => strtoupper(Str::random(8)),
             'referred_by'   => $referrer?->id,

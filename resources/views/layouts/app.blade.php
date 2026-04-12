@@ -91,7 +91,7 @@
                             class="absolute right-0 mt-2 w-56 bg-white border border-surface-100 rounded-2xl shadow-soft py-2 text-sm z-50">
                             <div class="px-4 py-2 border-b border-surface-100 mb-1">
                                 <p class="font-semibold text-surface-900 truncate">{{ auth()->user()->name }}</p>
-                                <p class="text-xs text-surface-400 truncate">{{ auth()->user()->email }}</p>
+                                <p class="text-xs text-surface-400 truncate">{{ auth()->user()->email ?: auth()->user()->phone }}</p>
                             </div>
                             <a href="{{ route('account.orders.index') }}" class="flex items-center gap-3 px-4 py-2 text-surface-600 hover:bg-surface-50 hover:text-surface-900 transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -145,6 +145,22 @@
                 </div>
             </div>
 
+            {{-- Primary menu (similar to addmagpro.com) --}}
+            <div class="hidden md:flex items-center gap-2 pb-3 text-sm">
+                <a href="{{ route('categories.stores') }}"
+                    class="px-4 py-1.5 rounded-full font-medium transition-all {{ request()->routeIs('categories.stores', 'categories.services') ? 'bg-brand-500 text-white shadow-sm' : 'text-surface-600 hover:bg-brand-50 hover:text-brand-600' }}">
+                    Stores &amp; Services
+                </a>
+                <a href="{{ route('categories.index') }}"
+                    class="px-4 py-1.5 rounded-full font-medium transition-all {{ request()->routeIs('categories.index', 'categories.show', 'products.show') ? 'bg-blue-500 text-white shadow-sm' : 'text-surface-600 hover:bg-blue-50 hover:text-blue-600' }}">
+                    Products
+                </a>
+                <a href="{{ route('categories.services') }}"
+                    class="px-4 py-1.5 rounded-full font-medium transition-all {{ request()->routeIs('categories.services', 'listings.show') ? 'bg-emerald-500 text-white shadow-sm' : 'text-surface-600 hover:bg-emerald-50 hover:text-emerald-600' }}">
+                    Classifieds
+                </a>
+            </div>
+
             {{-- Mobile search --}}
             <div class="md:hidden pb-3">
                 <form action="{{ route('search') }}" method="GET" class="flex gap-2">
@@ -157,6 +173,21 @@
                         </svg>
                     </button>
                 </form>
+
+                <div class="mt-3 flex gap-2 overflow-x-auto text-xs" style="-ms-overflow-style:none;scrollbar-width:none;">
+                    <a href="{{ route('categories.stores') }}"
+                        class="flex-shrink-0 px-3 py-1.5 rounded-full font-medium transition-all {{ request()->routeIs('categories.stores', 'categories.services') ? 'bg-brand-500 text-white shadow-sm' : 'text-surface-600 bg-surface-100 hover:bg-brand-50 hover:text-brand-600' }}">
+                        Stores &amp; Services
+                    </a>
+                    <a href="{{ route('categories.index') }}"
+                        class="flex-shrink-0 px-3 py-1.5 rounded-full font-medium transition-all {{ request()->routeIs('categories.index', 'categories.show', 'products.show') ? 'bg-blue-500 text-white shadow-sm' : 'text-surface-600 bg-surface-100 hover:bg-blue-50 hover:text-blue-600' }}">
+                        Products
+                    </a>
+                    <a href="{{ route('categories.services') }}"
+                        class="flex-shrink-0 px-3 py-1.5 rounded-full font-medium transition-all {{ request()->routeIs('categories.services', 'listings.show') ? 'bg-emerald-500 text-white shadow-sm' : 'text-surface-600 bg-surface-100 hover:bg-emerald-50 hover:text-emerald-600' }}">
+                        Classifieds
+                    </a>
+                </div>
             </div>
         </div>
     </header>

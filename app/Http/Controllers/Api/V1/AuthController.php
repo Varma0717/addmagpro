@@ -29,14 +29,14 @@ class AuthController extends Controller
 
         $user = User::create([
             'name' => $validated['name'],
-            'email' => strtolower($validated['email']),
-            'phone' => $validated['phone'] ?? null,
+            'email' => !empty($validated['email']) ? strtolower($validated['email']) : null,
+            'phone' => $validated['phone'],
             'password' => Hash::make($validated['password']),
             'role' => 'user',
             'is_active' => true,
             'referral_code' => strtoupper(Str::random(8)),
             'referred_by' => $referrerId,
-            'email_verified_at' => now(),
+            'email_verified_at' => !empty($validated['email']) ? now() : null,
         ]);
 
         $this->referralService->handleSignup($user);
@@ -53,7 +53,7 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         $validated = $request->validated();
-        $user = User::where('email', strtolower($validated['email']))->first();
+        $user = User::where('phone', $validated['phone'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             return $this->error('Invalid credentials', 422);
