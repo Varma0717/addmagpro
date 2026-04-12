@@ -57,7 +57,13 @@ Route::middleware('auth')->prefix('checkout')->name('checkout.')->group(function
 
 // Account panel (auth required)
 Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
-    Route::get('/', fn() => redirect()->route('account.orders.index'))->name('index');
+    Route::get('/', [Account\ExecutiveController::class, 'dashboard'])->name('index');
+    Route::get('/generate-coupons', [Account\ExecutiveController::class, 'generateCoupons'])->name('coupons.index');
+    Route::post('/generate-coupons', [Account\ExecutiveController::class, 'storeGeneratedCoupon'])->name('coupons.store');
+    Route::get('/team-details', [Account\ExecutiveController::class, 'teamDetails'])->name('team.index');
+    Route::get('/discount-shop-orders', [Account\ExecutiveController::class, 'discountShopOrders'])->name('discount-orders.index');
+    Route::get('/discount-customer-payments', [Account\ExecutiveController::class, 'discountStoreCustomerPayments'])->name('discount-payments.index');
+    Route::post('/withdraw', [Account\ExecutiveController::class, 'requestWithdraw'])->name('withdraw.store');
     Route::get('/profile', [Account\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [Account\ProfileController::class, 'update'])->name('profile.update');
     Route::get('/orders', [Account\OrderController::class, 'index'])->name('orders.index');
@@ -73,7 +79,7 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
 });
 
 // Dashboard redirect (Breeze default)
-Route::get('/dashboard', fn() => redirect()->route('account.orders.index'))
+Route::get('/dashboard', fn() => redirect()->route('account.index'))
     ->middleware(['auth', 'verified'])->name('dashboard');
 
 // Admin routes

@@ -31,20 +31,20 @@
             $links = [
             ['route' => 'account.index', 'label' => 'Dashboard', 'svg' => '
             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />'],
-            ['route' => null, 'label' => 'Generate Coupons', 'svg' => '
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />', 'coming_soon' => true],
+            ['route' => 'account.coupons.index', 'label' => 'Generate Coupons', 'svg' => '
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />'],
             ['route' => 'account.wallet.index', 'label' => 'Wallets', 'svg' => '
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 110-6h5.25A2.25 2.25 0 0121 6v6zm0 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V6a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 6" />'],
-            ['route' => null, 'label' => 'Team Details', 'svg' => '
-            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.742-.477 3 3 0 00-4.682-2.72m.94 3.197.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.579-5.963-1.593A5.979 5.979 0 016 18.75m12 0a5.969 5.969 0 00-.152-1.34M6 18.75a5.97 5.97 0 01.152-1.34m0 0a3 3 0 015.196-1.143M6.152 17.41a3 3 0 00-4.682 2.72A9.094 9.094 0 005.21 18.72m6.79-8.47a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />', 'coming_soon' => true],
+            ['route' => 'account.team.index', 'label' => 'Team Details', 'svg' => '
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.742-.477 3 3 0 00-4.682-2.72m.94 3.197.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.579-5.963-1.593A5.979 5.979 0 016 18.75m12 0a5.969 5.969 0 00-.152-1.34M6 18.75a5.97 5.97 0 01.152-1.34m0 0a3 3 0 015.196-1.143M6.152 17.41a3 3 0 00-4.682 2.72A9.094 9.094 0 005.21 18.72m6.79-8.47a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />'],
             ['route' => 'account.profile.edit', 'label' => 'Profile', 'svg' => '
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />'],
             ['route' => 'account.orders.index', 'label' => 'My Orders', 'svg' => '
             <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />'],
-            ['route' => null, 'label' => 'My Discount Shop Orders', 'svg' => '
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />', 'coming_soon' => true],
-            ['route' => null, 'label' => 'Discount Store Customer Payments', 'svg' => '
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5m-18 0v8.25A2.25 2.25 0 006 18.75h12a2.25 2.25 0 002.25-2.25V8.25m-18 0V6A2.25 2.25 0 016 3.75h12A2.25 2.25 0 0120.25 6v2.25" />', 'coming_soon' => true],
+            ['route' => 'account.discount-orders.index', 'label' => 'My Discount Shop Orders', 'svg' => '
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />'],
+            ['route' => 'account.discount-payments.index', 'label' => 'Discount Store Customer Payments', 'svg' => '
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5m-18 0v8.25A2.25 2.25 0 006 18.75h12a2.25 2.25 0 002.25-2.25V8.25m-18 0V6A2.25 2.25 0 016 3.75h12A2.25 2.25 0 0120.25 6v2.25" />'],
             ];
 
             $memberReferralLink = url('/service_user_registration/' . (auth()->user()->phone ?: auth()->id()));
@@ -114,7 +114,7 @@
             </div>
 
             <div class="mt-3">
-                <a href="javascript:;" class="w-full inline-flex items-center justify-center px-3 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors">
+                <a href="{{ route('account.index') }}#withdraw" class="w-full inline-flex items-center justify-center px-3 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors">
                     Withdraw
                 </a>
             </div>
