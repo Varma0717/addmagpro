@@ -23,22 +23,23 @@
     @foreach($orders as $order)
     <a href="{{ route('account.orders.show', $order) }}"
         class="card-hover block p-5">
+        @php
+        $statusClass = 'bg-surface-100 text-surface-600';
+        if ($order->status === 'pending') $statusClass = 'bg-amber-50 text-amber-700 ring-1 ring-amber-200';
+        elseif ($order->status === 'confirmed') $statusClass = 'bg-blue-50 text-blue-700 ring-1 ring-blue-200';
+        elseif ($order->status === 'shipped') $statusClass = 'bg-violet-50 text-violet-700 ring-1 ring-violet-200';
+        elseif ($order->status === 'delivered') $statusClass = 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200';
+        elseif ($order->status === 'cancelled') $statusClass = 'bg-red-50 text-red-700 ring-1 ring-red-200';
+        $orderTotal = (float) ($order->total ?? $order->total_amount ?? 0);
+        @endphp
         <div class="flex justify-between items-start">
             <div>
                 <p class="font-semibold text-surface-800">Order #{{ $order->id }}</p>
                 <p class="text-sm text-surface-500 mt-1">{{ $order->items->count() }} item(s) &bull; {{ $order->created_at->format('d M Y') }}</p>
             </div>
             <div class="text-right">
-                <p class="font-bold text-brand-600">₹{{ number_format($order->total_amount, 2) }}</p>
-                <span class="text-xs px-2.5 py-1 rounded-full mt-1 inline-block font-medium
-                            {{ match($order->status) {
-                                'pending'   => 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
-                                'confirmed' => 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
-                                'shipped'   => 'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
-                                'delivered' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
-                                'cancelled' => 'bg-red-50 text-red-700 ring-1 ring-red-200',
-                                default     => 'bg-surface-100 text-surface-600',
-                            } }}">
+                <p class="font-bold text-brand-600">₹{{ number_format($orderTotal, 2) }}</p>
+                <span class="text-xs px-2.5 py-1 rounded-full mt-1 inline-block font-medium {{ $statusClass }}">
                     {{ ucfirst($order->status) }}
                 </span>
             </div>

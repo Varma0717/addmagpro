@@ -13,19 +13,21 @@
 </div>
 
 <div class="space-y-5">
+    @php
+    $statusClass = 'bg-surface-100 text-surface-600';
+    if ($order->status === 'pending') $statusClass = 'bg-amber-50 text-amber-700 ring-1 ring-amber-200';
+    elseif ($order->status === 'confirmed') $statusClass = 'bg-blue-50 text-blue-700 ring-1 ring-blue-200';
+    elseif ($order->status === 'shipped') $statusClass = 'bg-violet-50 text-violet-700 ring-1 ring-violet-200';
+    elseif ($order->status === 'delivered') $statusClass = 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200';
+    elseif ($order->status === 'cancelled') $statusClass = 'bg-red-50 text-red-700 ring-1 ring-red-200';
+    $orderTotal = (float) ($order->total ?? $order->total_amount ?? 0);
+    @endphp
+
     {{-- Status + Summary --}}
     <div class="card p-6">
         <div class="flex items-center justify-between mb-5">
             <h2 class="font-bold font-display text-surface-800 text-lg">Order #{{ $order->id }}</h2>
-            <span class="px-3 py-1.5 rounded-full text-sm font-semibold
-                {{ match($order->status) {
-                    'pending'   => 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
-                    'confirmed' => 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
-                    'shipped'   => 'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
-                    'delivered' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
-                    'cancelled' => 'bg-red-50 text-red-700 ring-1 ring-red-200',
-                    default     => 'bg-surface-100 text-surface-600',
-                } }}">
+            <span class="px-3 py-1.5 rounded-full text-sm font-semibold {{ $statusClass }}">
                 {{ ucfirst($order->status) }}
             </span>
         </div>
@@ -36,7 +38,7 @@
             </div>
             <div>
                 <p class="text-surface-400 text-xs uppercase tracking-wide mb-1">Total</p>
-                <p class="font-bold text-brand-600 text-lg">₹{{ number_format($order->total_amount, 2) }}</p>
+                <p class="font-bold text-brand-600 text-lg">₹{{ number_format($orderTotal, 2) }}</p>
             </div>
             <div>
                 <p class="text-surface-400 text-xs uppercase tracking-wide mb-1">Payment</p>
