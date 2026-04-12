@@ -6,12 +6,30 @@
 <h2 class="text-xl font-bold font-display text-surface-800 mb-6">Executive Dashboard</h2>
 
 <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-    <div class="card p-4"><p class="text-xs text-surface-500">My Commission</p><p class="text-lg font-semibold">{{ number_format((float) $stats['my_commission'], 2) }}</p></div>
-    <div class="card p-4"><p class="text-xs text-surface-500">Back2Back Value</p><p class="text-lg font-semibold">{{ number_format((float) $stats['back2back_value'], 2) }}</p></div>
-    <div class="card p-4"><p class="text-xs text-surface-500">Back2Back Income</p><p class="text-lg font-semibold">{{ number_format((float) $stats['back2back_income'], 2) }}</p></div>
-    <div class="card p-4"><p class="text-xs text-surface-500">Discount Cashback</p><p class="text-lg font-semibold">{{ number_format((float) $stats['discount_cashback'], 2) }}</p></div>
-    <div class="card p-4"><p class="text-xs text-surface-500">Deposite Wallet</p><p class="text-lg font-semibold">{{ number_format((float) $stats['deposite_wallet'], 2) }}</p></div>
-    <div class="card p-4"><p class="text-xs text-surface-500">Cummulative</p><p class="text-lg font-semibold">{{ number_format((float) $stats['cummulative'], 2) }}</p></div>
+    <div class="card p-4">
+        <p class="text-xs text-surface-500">My Commission</p>
+        <p class="text-lg font-semibold">{{ number_format((float) $stats['my_commission'], 2) }}</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-surface-500">Back2Back Value</p>
+        <p class="text-lg font-semibold">{{ number_format((float) $stats['back2back_value'], 2) }}</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-surface-500">Back2Back Income</p>
+        <p class="text-lg font-semibold">{{ number_format((float) $stats['back2back_income'], 2) }}</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-surface-500">Discount Cashback</p>
+        <p class="text-lg font-semibold">{{ number_format((float) $stats['discount_cashback'], 2) }}</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-surface-500">Deposite Wallet</p>
+        <p class="text-lg font-semibold">{{ number_format((float) $stats['deposite_wallet'], 2) }}</p>
+    </div>
+    <div class="card p-4">
+        <p class="text-xs text-surface-500">Cummulative</p>
+        <p class="text-lg font-semibold">{{ number_format((float) $stats['cummulative'], 2) }}</p>
+    </div>
 </div>
 
 <div class="card p-5 mb-6">
