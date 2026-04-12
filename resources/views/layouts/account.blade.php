@@ -1,5 +1,7 @@
 @extends('layouts.app')
-@section('title', @yield('page_title', 'My Account'))
+@section('title')
+@yield('page_title', 'My Account')
+@endsection
 
 @section('content')
 <div class="grid md:grid-cols-4 gap-6 lg:gap-8">
