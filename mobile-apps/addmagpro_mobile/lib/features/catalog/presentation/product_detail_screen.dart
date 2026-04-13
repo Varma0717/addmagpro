@@ -55,6 +55,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final data = await _catalogRepository.fetchProductDetail(widget.slug);
+      bool wishlisted = false;
+      if (widget.token != null) {
+        wishlisted = await _wishlistRepository.check(
+          token: widget.token!,
+          productId: data.id,
+        );
+      }
       if (!mounted) return;
       setState(() => _product = data);
       await _initializeWishlistState(data.id);
@@ -248,6 +255,26 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
               child: Row(
                 children: [
+                  IconButton(
+                    onPressed: _wishlistBusy ? null : _toggleWishlist,
+                    icon: _wishlistBusy
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            _isWishlisted
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            color: _isWishlisted ? AppColors.error : AppColors.textSecondary,
+                          ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.surface,
+                      minimumSize: const Size(52, 52),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
                   // Quantity selector
                   Container(
                     decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
@@ -267,7 +294,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 12),
                   // Add to Cart
                   Expanded(
                     child: FilledButton(
@@ -290,6 +317,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildContent(ProductDetail product) {
+    final hasDiscount = product.price > product.effectivePrice;
+    final computedDiscountPercent = hasDiscount
+        ? (((product.price - product.effectivePrice) / product.price) * 100)
+            .round()
+        : 0;
+    final discountPercent = product.discountPercent > 0
+        ? product.discountPercent.round()
+        : computedDiscountPercent;
+
     return ListView(
       padding: EdgeInsets.zero,
       children: [
@@ -345,6 +381,38 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text('₹${product.effectivePrice.toStringAsFixed(0)}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                  if (hasDiscount) ...[
+                    const SizedBox(width: 10),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        '₹${product.price.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 15,
+                          decoration: TextDecoration.lineThrough,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF3),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '$discountPercent% OFF',
+                        style: const TextStyle(
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
                   const Spacer(),
                   if (product.ratingAvg != null) ...[
                     Container(

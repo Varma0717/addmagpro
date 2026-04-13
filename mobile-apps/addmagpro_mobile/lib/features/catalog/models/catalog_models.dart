@@ -155,7 +155,9 @@ class ProductDetail {
     required this.name,
     required this.slug,
     required this.description,
+    required this.price,
     required this.effectivePrice,
+    required this.discountPercent,
     required this.images,
     required this.ratingAvg,
     required this.stock,
@@ -165,7 +167,9 @@ class ProductDetail {
   final String name;
   final String slug;
   final String? description;
+  final double price;
   final double effectivePrice;
+  final double discountPercent;
   final List<String> images;
   final double? ratingAvg;
   final int stock;
@@ -179,7 +183,15 @@ class ProductDetail {
       name: (data['name'] as String?) ?? '-',
       slug: (data['slug'] as String?) ?? '',
       description: data['description'] as String?,
+      price: _toDouble(data['price']) ??
+          _toDouble(data['original_price']) ??
+          _toDouble(data['mrp']) ??
+          _toDouble(data['effective_price']) ??
+          0,
       effectivePrice: _toDouble(data['effective_price']) ?? 0,
+      discountPercent: _toDouble(data['discount_percent']) ??
+          _toDouble(data['discount_percentage']) ??
+          0,
       images: images is List
           ? images
               .whereType<Map<String, dynamic>>()
