@@ -8,6 +8,7 @@ import '../../home/data/home_repository.dart';
 import '../../home/models/home_feed_models.dart';
 import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
+import 'product_filters_sheet.dart';
 import 'product_detail_screen.dart';
 
 enum _CatalogSortOption {
@@ -103,6 +104,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     try {
       final category = _categories[_selectedIndex];
       if (category.type == 'ecommerce') {
+        final filters = _filtersByCategoryIndex[_selectedIndex] ?? const ProductFilterQuery();
         final response = await _catalogRepository.fetchProducts(
           page: _page,
           categorySlug: category.slug,
