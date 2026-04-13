@@ -9,7 +9,14 @@ use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReferralController;
 use App\Http\Controllers\Api\V1\WalletController;
+use App\Http\Controllers\Api\V1\WishlistController as ApiWishlistController;
+use App\Models\District;
 use Illuminate\Support\Facades\Route;
+
+// Public helper: districts by state (used by location picker)
+Route::get('/districts/{stateId}', function (int $stateId) {
+    return District::where('state_id', $stateId)->orderBy('district_name')->get(['id', 'district_name']);
+});
 
 Route::prefix('v1')->group(function (): void {
     Route::prefix('auth')->group(function (): void {
@@ -50,6 +57,10 @@ Route::prefix('v1')->group(function (): void {
 
         Route::post('/account/checkout/razorpay/create', [CheckoutController::class, 'createRazorpayOrder']);
         Route::post('/account/checkout/place-order', [CheckoutController::class, 'placeOrder']);
+
+        Route::get('/account/wishlist', [ApiWishlistController::class, 'index']);
+        Route::post('/account/wishlist/toggle', [ApiWishlistController::class, 'toggle']);
+        Route::get('/account/wishlist/check', [ApiWishlistController::class, 'check']);
     });
 
     Route::get('/categories', [CatalogController::class, 'categories']);

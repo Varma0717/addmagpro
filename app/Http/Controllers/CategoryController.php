@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ServiceListing;
@@ -66,21 +67,34 @@ class CategoryController extends Controller
         if ($category->type === 'ecommerce') {
             $query = Product::active()->inStock()
                 ->where('category_id', $category->id)
-                ->with('images');
+                ->with('images', 'brand');
 
             if ($request->filled('min_price')) $query->where('price', '>=', $request->min_price);
             if ($request->filled('max_price')) $query->where('price', '<=', $request->max_price);
+            if ($request->filled('brand_id')) $query->where('brand_id', $request->brand_id);
+            if ($request->filled('min_rating')) {
+                $query->whereHas('reviews', function ($q) use ($request) {
+                    // nothing
+                }, '>=', 1)->withAvg('reviews', 'rating')
+                    ->having('reviews_avg_rating', '>=', $request->min_rating);
+            }
 
             $sort = $request->get('sort', 'latest');
             match ($sort) {
                 'price_asc'  => $query->orderBy('price'),
                 'price_desc' => $query->orderByDesc('price'),
+                'rating'     => $query->withAvg('reviews', 'rating')->orderByDesc('reviews_avg_rating'),
                 default      => $query->latest(),
             };
 
             $items = $query->paginate(20)->withQueryString();
 
-            return view('categories.show', compact('category', 'items'));
+            // Get brands for this category to populate filter
+            $brands = Brand::whereHas('products', function ($q) use ($category) {
+                $q->where('category_id', $category->id)->where('is_active', true);
+            })->orderBy('brand_name')->get();
+
+            return view('categories.show', compact('category', 'items', 'brands'));
         }
 
         // Service category
@@ -91,6 +105,8 @@ class CategoryController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('categories.show', compact('category', 'items'));
+        $brands = collect();
+
+        return view('categories.show', compact('category', 'items', 'brands'));
     }
 }

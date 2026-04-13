@@ -118,6 +118,25 @@
 </section>
 @endif
 
+{{-- Recommended Offers --}}
+@if($recommendedOffers->count())
+<section class="mb-12" data-animate>
+    <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-3xl p-6 md:p-8 border border-amber-100">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="font-display text-2xl font-bold text-surface-900">Recommended Offers</h2>
+                <p class="text-sm text-surface-500 mt-1">Top deals with discounts just for you</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            @foreach($recommendedOffers as $product)
+            @include('partials.product-card', ['product' => $product])
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
 {{-- Mid Banner --}}
 @if($midBanners->count())
 <div class="mb-12 rounded-3xl overflow-hidden shadow-card" data-animate>

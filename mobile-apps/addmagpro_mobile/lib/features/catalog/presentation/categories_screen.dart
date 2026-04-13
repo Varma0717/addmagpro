@@ -1,0 +1,353 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/network/api_client.dart';
+import '../../home/data/home_repository.dart';
+import '../../home/models/home_feed_models.dart';
+import '../data/catalog_repository.dart';
+import '../models/catalog_models.dart';
+import 'product_detail_screen.dart';
+import 'listing_list_screen.dart';
+
+class CategoriesScreen extends StatefulWidget {
+  const CategoriesScreen({super.key, this.token});
+
+  final String? token;
+
+  @override
+  State<CategoriesScreen> createState() => _CategoriesScreenState();
+}
+
+class _CategoriesScreenState extends State<CategoriesScreen> {
+  late final HomeRepository _homeRepository;
+  late final CatalogRepository _catalogRepository;
+  bool _loadingCategories = true;
+  List<HomeCategoryItem> _categories = <HomeCategoryItem>[];
+  int _selectedIndex = 0;
+  String? _error;
+
+  // Products for selected category
+  bool _loadingProducts = false;
+  final List<ProductListItem> _products = <ProductListItem>[];
+  int _page = 1;
+  int _lastPage = 1;
+  bool _loadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _homeRepository = HomeRepository(apiClient: ApiClient());
+    _catalogRepository = CatalogRepository(apiClient: ApiClient());
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() {
+      _loadingCategories = true;
+      _error = null;
+    });
+
+    try {
+      final feed = await _homeRepository.fetch();
+      if (!mounted) return;
+      setState(() {
+        _categories = feed.categories;
+        _loadingCategories = false;
+      });
+      if (_categories.isNotEmpty) {
+        _loadProducts(reset: true);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString();
+        _loadingCategories = false;
+      });
+    }
+  }
+
+  Future<void> _loadProducts({required bool reset}) async {
+    if (_categories.isEmpty) return;
+
+    if (reset) {
+      setState(() {
+        _loadingProducts = true;
+        _products.clear();
+        _page = 1;
+        _lastPage = 1;
+      });
+    }
+
+    try {
+      final category = _categories[_selectedIndex];
+      if (category.type == 'ecommerce') {
+        final response = await _catalogRepository.fetchProducts(
+          page: _page,
+          categorySlug: category.slug,
+        );
+        if (!mounted) return;
+        setState(() {
+          _products.addAll(response.items);
+          _lastPage = response.lastPage;
+        });
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingProducts = false;
+          _loadingMore = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || _page >= _lastPage) return;
+    setState(() {
+      _loadingMore = true;
+      _page += 1;
+    });
+    await _loadProducts(reset: false);
+  }
+
+  void _onCategoryTap(int index) {
+    if (_selectedIndex == index) return;
+    setState(() => _selectedIndex = index);
+    _loadProducts(reset: true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loadingCategories) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null && _categories.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(_error!, style: const TextStyle(color: Color(0xFFB42318))),
+            const SizedBox(height: 12),
+            TextButton(onPressed: _loadCategories, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    if (_categories.isEmpty) {
+      return const Center(child: Text('No categories found'));
+    }
+
+    return Row(
+      children: <Widget>[
+        // Left sidebar — category list
+        SizedBox(
+          width: 100,
+          child: Container(
+            color: const Color(0xFFF9FAFB),
+            child: ListView.builder(
+              itemCount: _categories.length,
+              itemBuilder: (context, index) {
+                final category = _categories[index];
+                final isSelected = _selectedIndex == index;
+                return InkWell(
+                  onTap: () => _onCategoryTap(index),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : Colors.transparent,
+                      border: Border(
+                        left: BorderSide(
+                          color: isSelected ? const Color(0xFFFF7F11) : Colors.transparent,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                    child: Column(
+                      children: <Widget>[
+                        if (category.imageUrl != null)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              category.imageUrl!,
+                              width: 36,
+                              height: 36,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF3E8),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.category_outlined, size: 18, color: Color(0xFFC2410C)),
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF3E8),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.category_outlined, size: 18, color: Color(0xFFC2410C)),
+                          ),
+                        const SizedBox(height: 6),
+                        Text(
+                          category.name,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected ? const Color(0xFFFF7F11) : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        const VerticalDivider(width: 1, thickness: 1, color: Color(0xFFE5E7EB)),
+        // Right side — product grid
+        Expanded(
+          child: _loadingProducts
+              ? const Center(child: CircularProgressIndicator())
+              : _products.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          const Icon(Icons.inventory_2_outlined, size: 48, color: Color(0xFFD1D5DB)),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No products in ${_categories[_selectedIndex].name}',
+                            style: const TextStyle(color: Color(0xFF6B7280)),
+                          ),
+                        ],
+                      ),
+                    )
+                  : NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 200) {
+                          _loadMore();
+                        }
+                        return false;
+                      },
+                      child: GridView.builder(
+                        padding: const EdgeInsets.all(10),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.68,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                        ),
+                        itemCount: _products.length + (_loadingMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index >= _products.length) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+
+                          final product = _products[index];
+                          return _ProductGridCard(
+                            product: product,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => ProductDetailScreen(
+                                    slug: product.slug,
+                                    token: widget.token,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProductGridCard extends StatelessWidget {
+  const _ProductGridCard({required this.product, required this.onTap});
+
+  final ProductListItem product;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                child: product.primaryImageUrl != null
+                    ? Image.network(
+                        product.primaryImageUrl!,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: const Color(0xFFF3F4F6),
+                          child: const Center(child: Icon(Icons.image_outlined, color: Color(0xFF9CA3AF))),
+                        ),
+                      )
+                    : Container(
+                        color: const Color(0xFFF3F4F6),
+                        child: const Center(child: Icon(Icons.image_outlined, color: Color(0xFF9CA3AF))),
+                      ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    product.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: <Widget>[
+                      Text(
+                        '₹${product.effectivePrice.toStringAsFixed(0)}',
+                        style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFFB54708), fontSize: 13),
+                      ),
+                      const Spacer(),
+                      if (product.ratingAvg != null)
+                        Text('⭐ ${product.ratingAvg!.toStringAsFixed(1)}', style: const TextStyle(fontSize: 11)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

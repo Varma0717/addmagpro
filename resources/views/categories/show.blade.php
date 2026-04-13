@@ -49,6 +49,39 @@
                 </select>
             </div>
 
+            @if($brands->count())
+            <div class="card p-5">
+                <h3 class="font-semibold text-surface-800 mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+                    </svg>
+                    Brand
+                </h3>
+                <select name="brand_id" class="input">
+                    <option value="">All brands</option>
+                    @foreach($brands as $brand)
+                    <option value="{{ $brand->id }}" {{ request('brand_id') == $brand->id ? 'selected' : '' }}>{{ $brand->brand_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+
+            <div class="card p-5">
+                <h3 class="font-semibold text-surface-800 mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5-4.5L16.5 16.5m0 0L12 12m4.5 4.5V3" />
+                    </svg>
+                    Sort By
+                </h3>
+                <select name="sort" class="input">
+                    <option value="latest" {{ request('sort', 'latest') == 'latest' ? 'selected' : '' }}>Newest first</option>
+                    <option value="price_asc" {{ request('sort') == 'price_asc' ? 'selected' : '' }}>Price: Low to High</option>
+                    <option value="price_desc" {{ request('sort') == 'price_desc' ? 'selected' : '' }}>Price: High to Low</option>
+                    <option value="rating" {{ request('sort') == 'rating' ? 'selected' : '' }}>Highest Rated</option>
+                </select>
+            </div>
+
             <button type="submit" class="btn-primary w-full">Apply Filters</button>
             <a href="{{ route('categories.show', $category->slug) }}" class="block text-center text-sm text-surface-400 hover:text-brand-500 transition-colors">Clear filters</a>
         </form>

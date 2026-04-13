@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::post('/set-location', [HomeController::class, 'setLocation'])->name('set-location');
 Route::get('/search', [SearchController::class, 'index'])->name('search');
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('/stores', [CategoryController::class, 'stores'])->name('categories.stores');

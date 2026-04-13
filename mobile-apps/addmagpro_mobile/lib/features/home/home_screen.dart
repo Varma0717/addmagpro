@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../app_state.dart';
 import '../../core/network/api_client.dart';
+import '../account/presentation/account_screen.dart';
+import '../catalog/presentation/categories_screen.dart';
 import '../catalog/presentation/listing_detail_screen.dart';
 import '../catalog/presentation/listing_list_screen.dart';
 import '../catalog/presentation/product_detail_screen.dart';
 import '../catalog/presentation/product_list_screen.dart';
 import '../cart/presentation/cart_screen.dart';
+import '../wishlist/presentation/wishlist_screen.dart';
 import 'data/home_repository.dart';
 import 'models/home_feed_models.dart';
 import '../notifications/presentation/notifications_screen.dart';
 import '../orders/presentation/orders_screen.dart';
-import '../profile/presentation/profile_screen.dart';
-import '../referral/presentation/referral_screen.dart';
 import '../search/presentation/search_screen.dart';
-import '../wallet/presentation/wallet_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.appState});
@@ -39,58 +39,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final pages = <Widget>[
       _DashboardView(appState: widget.appState, token: token),
-      ReferralScreen(token: token, memberName: user?.name ?? 'Member'),
-      WalletScreen(token: token),
-      ProfileScreen(appState: widget.appState),
+      CategoriesScreen(token: token),
+      CartScreen(token: token, appState: widget.appState),
+      WishlistScreen(token: token),
+      AccountScreen(appState: widget.appState),
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(_titleForIndex(_currentIndex)),
-        actions: _currentIndex == 0
-            ? <Widget>[
-                IconButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => SearchScreen(token: token),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.search),
-                ),
-                IconButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => CartScreen(token: token, appState: widget.appState),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.shopping_cart_outlined),
-                ),
-                IconButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => NotificationsScreen(token: token),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.notifications_none),
-                ),
-                IconButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => OrdersScreen(token: token),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.receipt_long_outlined),
-                ),
-              ]
-            : null,
+        actions: _actionsForIndex(_currentIndex, token),
       ),
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: NavigationBar(
@@ -99,10 +57,11 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() => _currentIndex = index);
         },
         destinations: const <NavigationDestination>[
-          NavigationDestination(icon: Icon(Icons.space_dashboard_outlined), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.groups_2_outlined), label: 'Referrals'),
-          NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), label: 'Wallet'),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
+          NavigationDestination(icon: Icon(Icons.space_dashboard_outlined), selectedIcon: Icon(Icons.space_dashboard), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.category_outlined), selectedIcon: Icon(Icons.category), label: 'Categories'),
+          NavigationDestination(icon: Icon(Icons.shopping_cart_outlined), selectedIcon: Icon(Icons.shopping_cart), label: 'Cart'),
+          NavigationDestination(icon: Icon(Icons.favorite_outline), selectedIcon: Icon(Icons.favorite), label: 'Wishlist'),
+          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Account'),
         ],
       ),
     );
@@ -111,14 +70,36 @@ class _HomeScreenState extends State<HomeScreen> {
   String _titleForIndex(int index) {
     switch (index) {
       case 1:
-        return 'Referral Network';
+        return 'Categories';
       case 2:
-        return 'Wallet';
+        return 'My Cart';
       case 3:
-        return 'My Profile';
+        return 'Wishlist';
+      case 4:
+        return 'My Account';
       default:
-        return 'AddMagPro Referral';
+        return 'AddMagPro';
     }
+  }
+
+  List<Widget>? _actionsForIndex(int index, String token) {
+    if (index == 0) {
+      return <Widget>[
+        IconButton(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => SearchScreen(token: token)),
+          ),
+          icon: const Icon(Icons.search),
+        ),
+        IconButton(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => NotificationsScreen(token: token)),
+          ),
+          icon: const Icon(Icons.notifications_none),
+        ),
+      ];
+    }
+    return null;
   }
 }
 
