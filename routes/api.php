@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AdsController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CatalogController;
@@ -65,6 +66,9 @@ Route::prefix('v1')->group(function (): void {
 
         Route::post('/account/device-tokens', [DeviceTokenController::class, 'upsert']);
     });
+
+    Route::get('/ads/{placement}', [AdsController::class, 'index'])->whereIn('placement', ['home', 'category', 'product']);
+    Route::post('/ads/{ad}/click', [AdsController::class, 'click'])->name('api.v1.ads.click');
 
     Route::get('/categories', [CatalogController::class, 'categories']);
     Route::get('/home', [CatalogController::class, 'home']);
