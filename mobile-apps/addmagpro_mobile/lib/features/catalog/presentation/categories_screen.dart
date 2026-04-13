@@ -19,6 +19,13 @@ class CategoriesScreen extends StatefulWidget {
 }
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
+  static const Map<String, String> _sortOptions = <String, String>{
+    'latest': 'Latest',
+    'price_asc': 'Price: Low-High',
+    'price_desc': 'Price: High-Low',
+    'rating': 'Rating',
+  };
+
   late final HomeRepository _homeRepository;
   late final CatalogRepository _catalogRepository;
   bool _loadingCategories = true;
@@ -32,6 +39,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   int _page = 1;
   int _lastPage = 1;
   bool _loadingMore = false;
+  String? _selectedSort;
+  double? _minPrice;
+  double? _maxPrice;
+  double? _minRating;
+  String? _brand;
 
   @override
   void initState() {
@@ -84,6 +96,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         final response = await _catalogRepository.fetchProducts(
           page: _page,
           categorySlug: category.slug,
+          sort: _selectedSort,
+          minPrice: _minPrice,
+          maxPrice: _maxPrice,
+          minRating: _minRating,
+          brand: _brand,
         );
         if (!mounted) return;
         setState(() {
@@ -117,6 +134,145 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     if (_selectedIndex == index) return;
     setState(() => _selectedIndex = index);
     _loadProducts(reset: true);
+  }
+
+  Future<void> _openSortAndFilterSheet() async {
+    final minController = TextEditingController(text: _minPrice?.toStringAsFixed(0) ?? '');
+    final maxController = TextEditingController(text: _maxPrice?.toStringAsFixed(0) ?? '');
+    final ratingController = TextEditingController(text: _minRating?.toStringAsFixed(1) ?? '');
+    final brandController = TextEditingController(text: _brand ?? '');
+
+    String? draftSort = _selectedSort;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Sort & filters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 12),
+                      const Text('Sort', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: _sortOptions.entries
+                            .map(
+                              (entry) => ChoiceChip(
+                                label: Text(entry.value),
+                                selected: draftSort == entry.key,
+                                onSelected: (_) => setModalState(() => draftSort = entry.key),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: minController,
+                        decoration: const InputDecoration(labelText: 'Min price'),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: maxController,
+                        decoration: const InputDecoration(labelText: 'Max price'),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: ratingController,
+                        decoration: const InputDecoration(labelText: 'Min rating (0-5)'),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: brandController,
+                        decoration: const InputDecoration(labelText: 'Brand'),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              setModalState(() {
+                                draftSort = null;
+                                minController.clear();
+                                maxController.clear();
+                                ratingController.clear();
+                                brandController.clear();
+                              });
+                            },
+                            child: const Text('Clear'),
+                          ),
+                          const Spacer(),
+                          FilledButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedSort = draftSort;
+                                _minPrice = double.tryParse(minController.text.trim());
+                                _maxPrice = double.tryParse(maxController.text.trim());
+                                _minRating = double.tryParse(ratingController.text.trim());
+                                _brand = brandController.text.trim().isEmpty ? null : brandController.text.trim();
+                              });
+                              Navigator.of(context).pop();
+                              _loadProducts(reset: true);
+                            },
+                            child: const Text('Apply'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      _selectedSort = null;
+      _minPrice = null;
+      _maxPrice = null;
+      _minRating = null;
+      _brand = null;
+    });
+    _loadProducts(reset: true);
+  }
+
+  List<Widget> _buildActiveFilterChips() {
+    final chips = <Widget>[];
+    if (_selectedSort != null) {
+      chips.add(Chip(label: Text('Sort: ${_sortOptions[_selectedSort] ?? _selectedSort!}')));
+    }
+    if (_minPrice != null) {
+      chips.add(Chip(label: Text('Min ₹${_minPrice!.toStringAsFixed(0)}')));
+    }
+    if (_maxPrice != null) {
+      chips.add(Chip(label: Text('Max ₹${_maxPrice!.toStringAsFixed(0)}')));
+    }
+    if (_minRating != null) {
+      chips.add(Chip(label: Text('Rating ${_minRating!.toStringAsFixed(1)}+')));
+    }
+    if (_brand != null) {
+      chips.add(Chip(label: Text('Brand: $_brand')));
+    }
+    return chips;
   }
 
   @override
@@ -223,60 +379,87 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         const VerticalDivider(width: 1, thickness: 1, color: AppColors.borderLight),
         // Right side — product grid
         Expanded(
-          child: _loadingProducts
-              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-              : _products.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
-                          const SizedBox(height: 8),
-                          Text(
-                            'No products in ${_categories[_selectedIndex].name}',
-                            style: const TextStyle(color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    )
-                  : NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 200) {
-                          _loadMore();
-                        }
-                        return false;
-                      },
-                      child: GridView.builder(
-                        padding: const EdgeInsets.all(10),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.68,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                        ),
-                        itemCount: _products.length + (_loadingMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= _products.length) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-
-                          final product = _products[index];
-                          return _ProductGridCard(
-                            product: product,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => ProductDetailScreen(
-                                    slug: product.slug,
-                                    token: widget.token,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+                child: Row(
+                  children: [
+                    FilledButton.tonalIcon(
+                      onPressed: _openSortAndFilterSheet,
+                      icon: const Icon(Icons.tune_rounded, size: 18),
+                      label: const Text('Sort & filter'),
                     ),
+                    const Spacer(),
+                    if (_buildActiveFilterChips().isNotEmpty)
+                      TextButton(onPressed: _clearAllFilters, child: const Text('Clear all')),
+                  ],
+                ),
+              ),
+              if (_buildActiveFilterChips().isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  child: Wrap(spacing: 8, runSpacing: 8, children: _buildActiveFilterChips()),
+                ),
+              Expanded(
+                child: _loadingProducts
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : _products.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'No products in ${_categories[_selectedIndex].name}',
+                                  style: const TextStyle(color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          )
+                        : NotificationListener<ScrollNotification>(
+                            onNotification: (notification) {
+                              if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 200) {
+                                _loadMore();
+                              }
+                              return false;
+                            },
+                            child: GridView.builder(
+                              padding: const EdgeInsets.all(10),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.68,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                              ),
+                              itemCount: _products.length + (_loadingMore ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index >= _products.length) {
+                                  return const Center(child: CircularProgressIndicator());
+                                }
+
+                                final product = _products[index];
+                                return _ProductGridCard(
+                                  product: product,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => ProductDetailScreen(
+                                          slug: product.slug,
+                                          token: widget.token,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+              ),
+            ],
+          ),
         ),
       ],
     );
