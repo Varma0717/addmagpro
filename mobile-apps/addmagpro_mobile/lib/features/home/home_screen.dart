@@ -16,8 +16,10 @@ import '../catalog/presentation/listing_list_screen.dart';
 import '../catalog/presentation/product_detail_screen.dart';
 import '../catalog/presentation/product_list_screen.dart';
 import '../cart/presentation/cart_screen.dart';
+import '../notifications/data/notification_repository.dart';
 import '../wishlist/presentation/wishlist_screen.dart';
 import 'data/home_repository.dart';
+import 'data/location_repository.dart';
 import 'models/home_feed_models.dart';
 import '../notifications/presentation/notifications_screen.dart';
 import '../search/presentation/search_screen.dart';
@@ -33,6 +35,44 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  late final LocationRepository _locationRepository;
+  late final NotificationRepository _notificationRepository;
+  bool _loadingTopSection = true;
+  String _locationLabel = 'All India';
+  int? _selectedStateId;
+  int? _selectedDistrictId;
+  int _unreadNotifications = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _locationRepository = LocationRepository(apiClient: ApiClient());
+    _notificationRepository = NotificationRepository(apiClient: ApiClient());
+    _loadTopSection();
+  }
+
+  Future<void> _loadTopSection() async {
+    final token = widget.appState.token;
+    if (token == null) return;
+    try {
+      final results = await Future.wait<dynamic>([
+        _locationRepository.fetchSelection(token),
+        _notificationRepository.unreadCount(token),
+      ]);
+      if (!mounted) return;
+      final location = results[0] as LocationSelection;
+      setState(() {
+        _selectedStateId = location.stateId;
+        _selectedDistrictId = location.districtId;
+        _locationLabel = location.label;
+        _unreadNotifications = results[1] as int;
+      });
+    } catch (_) {
+      if (!mounted) return;
+    } finally {
+      if (mounted) setState(() => _loadingTopSection = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,35 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      appBar: _currentIndex == 0
-          ? AppBar(
-              title: Row(
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 18),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text('AddMagPro'),
-                ],
-              ),
-              actions: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SearchScreen(token: token))),
-                  icon: const Icon(Icons.search_rounded),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => NotificationsScreen(token: token))),
-                  icon: const Icon(Icons.notifications_outlined),
-                ),
-              ],
-            )
-          : AppBar(title: Text(_titleForIndex(_currentIndex))),
+      appBar: _currentIndex == 0 ? _buildHomeTopSection(context, token) : AppBar(title: Text(_titleForIndex(_currentIndex))),
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -105,6 +117,186 @@ class _HomeScreenState extends State<HomeScreen> {
       case 4: return 'My Account';
       default: return 'AddMagPro';
     }
+  }
+
+  PreferredSizeWidget _buildHomeTopSection(BuildContext context, String token) {
+    return AppBar(
+      toolbarHeight: 118,
+      titleSpacing: 12,
+      title: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: _loadingTopSection ? null : () => _openLocationPicker(token),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, size: 16, color: AppColors.primary),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _loadingTopSection ? 'Loading location...' : _locationLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        const Icon(Icons.expand_more_rounded, size: 18, color: AppColors.textMuted),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF7EE),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '₹${widget.appState.currentUser?.walletBalance.toStringAsFixed(2) ?? '0.00'}',
+                  style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF147A31), fontSize: 12),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () async {
+                  await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => NotificationsScreen(token: token)));
+                  _loadTopSection();
+                },
+                icon: Badge(
+                  isLabelVisible: _unreadNotifications > 0,
+                  label: Text(_unreadNotifications > 99 ? '99+' : '$_unreadNotifications'),
+                  child: const Icon(Icons.notifications_outlined),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SearchScreen(token: token))),
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.search_rounded, size: 20, color: AppColors.textMuted),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Search for stores, products, services',
+                      style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openLocationPicker(String token) async {
+    final states = await _locationRepository.fetchStates();
+    int? selectedState = _selectedStateId;
+    int? selectedDistrict = _selectedDistrictId;
+    List<LocationOption> districts = selectedState != null
+        ? await _locationRepository.fetchDistricts(selectedState)
+        : <LocationOption>[];
+
+    if (!mounted) return;
+
+    final didApply = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Select Location', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 14),
+                  DropdownButtonFormField<int?>(
+                    value: selectedState,
+                    decoration: const InputDecoration(labelText: 'State'),
+                    items: [
+                      const DropdownMenuItem<int?>(value: null, child: Text('All States')),
+                      ...states.map((state) => DropdownMenuItem<int?>(value: state.id, child: Text(state.name))),
+                    ],
+                    onChanged: (value) async {
+                      setSheetState(() {
+                        selectedState = value;
+                        selectedDistrict = null;
+                        districts = <LocationOption>[];
+                      });
+                      if (value != null) {
+                        final loaded = await _locationRepository.fetchDistricts(value);
+                        if (!context.mounted) return;
+                        setSheetState(() => districts = loaded);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<int?>(
+                    value: selectedDistrict,
+                    decoration: const InputDecoration(labelText: 'District'),
+                    items: [
+                      const DropdownMenuItem<int?>(value: null, child: Text('All Districts')),
+                      ...districts.map((district) => DropdownMenuItem<int?>(value: district.id, child: Text(district.name))),
+                    ],
+                    onChanged: selectedState == null ? null : (value) => setSheetState(() => selectedDistrict = value),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () async {
+                        final updated = await _locationRepository.updateSelection(
+                          token,
+                          stateId: selectedState,
+                          districtId: selectedDistrict,
+                        );
+                        if (!context.mounted) return;
+                        setState(() {
+                          _selectedStateId = updated.stateId;
+                          _selectedDistrictId = updated.districtId;
+                          _locationLabel = updated.label;
+                        });
+                        Navigator.of(context).pop(true);
+                      },
+                      child: const Text('Apply'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (didApply == true) _loadTopSection();
   }
 }
 

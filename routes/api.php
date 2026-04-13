@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CheckoutController;
+use App\Http\Controllers\Api\V1\LocationPreferenceController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Api\V1\ReferralController;
 use App\Http\Controllers\Api\V1\WalletController;
 use App\Http\Controllers\Api\V1\WishlistController as ApiWishlistController;
 use App\Models\District;
+use App\Models\State;
 use Illuminate\Support\Facades\Route;
 
 // Public helper: districts by state (used by location picker)
@@ -19,6 +21,24 @@ Route::get('/districts/{stateId}', function (int $stateId) {
 });
 
 Route::prefix('v1')->group(function (): void {
+    Route::get('/states', function () {
+        return response()->json([
+            'success' => true,
+            'message' => 'States fetched',
+            'data' => State::orderBy('state_name')->get(['id', 'state_name']),
+            'meta' => [],
+        ]);
+    });
+
+    Route::get('/districts/{stateId}', function (int $stateId) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Districts fetched',
+            'data' => District::where('state_id', $stateId)->orderBy('district_name')->get(['id', 'district_name']),
+            'meta' => [],
+        ]);
+    });
+
     Route::prefix('auth')->group(function (): void {
         Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
         Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
@@ -45,6 +65,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/account/notifications', [NotificationController::class, 'index']);
         Route::get('/account/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::patch('/account/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+
+        Route::get('/account/location', [LocationPreferenceController::class, 'show']);
+        Route::post('/account/location', [LocationPreferenceController::class, 'update']);
 
         Route::get('/account/orders', [OrderController::class, 'index']);
         Route::get('/account/orders/{order}', [OrderController::class, 'show']);
