@@ -517,7 +517,9 @@ class _ServiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ListingDetailScreen(slug: listing.slug))),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => ListingDetailScreen(slug: listing.slug)),
+      ),
       child: Container(
         margin: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
         padding: const EdgeInsets.all(14),
