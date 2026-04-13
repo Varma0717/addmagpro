@@ -30,6 +30,67 @@
     @endforeach
 </div>
 
+
+
+{{-- Chatbot Analytics --}}
+<div class="card p-5 mb-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-surface-800">Chatbot Analytics</h3>
+        <span class="text-xs text-surface-500">Lightweight assistant interactions</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="rounded-xl border border-surface-200 p-3 bg-surface-50">
+            <p class="text-xs uppercase tracking-wider text-surface-500">Suggestion Requests</p>
+            <p class="text-xl font-bold text-surface-800 mt-1">{{ $chatbotStats['requests'] }}</p>
+        </div>
+        <div class="rounded-xl border border-surface-200 p-3 bg-surface-50">
+            <p class="text-xs uppercase tracking-wider text-surface-500">Fallback Rate</p>
+            <p class="text-xl font-bold text-surface-800 mt-1">{{ number_format($chatbotStats['fallback_rate'], 1) }}%</p>
+        </div>
+        <div class="rounded-xl border border-surface-200 p-3 bg-surface-50">
+            <p class="text-xs uppercase tracking-wider text-surface-500">Widget Opens</p>
+            <p class="text-xl font-bold text-surface-800 mt-1">{{ $chatbotStats['opens'] }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="card overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-surface-100 flex items-center gap-2">
+        <svg class="w-5 h-5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9a3.375 3.375 0 116.75 0c0 1.313-.726 2.456-1.8 3.028-.724.387-1.2 1.161-1.2 1.982v.365m0 3.375h.008v.008h-.008v-.008z" />
+        </svg>
+        <span class="font-semibold text-surface-700">Recent Chatbot Events</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr>
+                    <th class="table-header">Time</th>
+                    <th class="table-header">Event</th>
+                    <th class="table-header">Intent</th>
+                    <th class="table-header">Provider</th>
+                    <th class="table-header">Fallback</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-100">
+                @forelse($recent_chatbot_interactions as $event)
+                <tr class="hover:bg-surface-50 transition-colors">
+                    <td class="table-cell text-surface-500">{{ $event->created_at->format('d M H:i') }}</td>
+                    <td class="table-cell text-surface-700">{{ str_replace('_', ' ', ucfirst($event->event_type)) }}</td>
+                    <td class="table-cell text-surface-500">{{ $event->intent ?: '—' }}</td>
+                    <td class="table-cell text-surface-500">{{ strtoupper($event->provider) }}</td>
+                    <td class="table-cell text-surface-500">{{ $event->fallback_used ? 'Yes' : 'No' }}</td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="5" class="table-cell text-center text-surface-400 py-6">No chatbot activity yet.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <div class="grid md:grid-cols-2 gap-6">
     {{-- Recent Orders --}}
     <div class="card overflow-hidden">
