@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AdsController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CatalogController;
@@ -10,16 +11,39 @@ use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReferralController;
 use App\Http\Controllers\Api\V1\WalletController;
+use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\V1\WishlistController as ApiWishlistController;
 use App\Models\District;
+use App\Models\State;
 use Illuminate\Support\Facades\Route;
 
 // Public helper: districts by state (used by location picker)
 Route::get('/districts/{stateId}', function (int $stateId) {
-    return District::where('state_id', $stateId)->orderBy('district_name')->get(['id', 'district_name']);
+    return [
+        'data' => District::where('state_id', $stateId)->orderBy('district_name')->get(['id', 'district_name']),
+    ];
+});
+
+Route::prefix('chatbot')->middleware('throttle:60,1')->group(function (): void {
+    Route::post('/suggestions', [ChatbotController::class, 'suggestions']);
+    Route::post('/track', [ChatbotController::class, 'track']);
 });
 
 Route::prefix('v1')->group(function (): void {
+    Route::get('/states', function () {
+        return [
+            'data' => State::query()
+                ->orderBy('state_name')
+                ->get(['id', 'state_name']),
+        ];
+    });
+
+    Route::get('/districts/{stateId}', function (int $stateId) {
+        return [
+            'data' => District::where('state_id', $stateId)->orderBy('district_name')->get(['id', 'district_name']),
+        ];
+    });
+
     Route::prefix('auth')->group(function (): void {
         Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
         Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
@@ -47,6 +71,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/account/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::patch('/account/notifications/{notification}/read', [NotificationController::class, 'markRead']);
 
+        Route::get('/account/location', [LocationPreferenceController::class, 'show']);
+        Route::post('/account/location', [LocationPreferenceController::class, 'update']);
+
         Route::get('/account/orders', [OrderController::class, 'index']);
         Route::get('/account/orders/{order}', [OrderController::class, 'show']);
 
@@ -66,6 +93,9 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/account/device-tokens', [DeviceTokenController::class, 'upsert']);
         Route::delete('/account/device-tokens', [DeviceTokenController::class, 'destroy']);
     });
+
+    Route::get('/ads/{placement}', [AdsController::class, 'index'])->whereIn('placement', ['home', 'category', 'product']);
+    Route::post('/ads/{ad}/click', [AdsController::class, 'click'])->name('api.v1.ads.click');
 
     Route::get('/categories', [CatalogController::class, 'categories']);
     Route::get('/home', [CatalogController::class, 'home']);

@@ -1,15 +1,24 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app_state.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
+import 'product_filters_sheet.dart';
 import 'product_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({super.key, this.categorySlug, this.title = 'Products', this.token});
+  const ProductListScreen({
+    super.key,
+    required this.appState,
+    this.categorySlug,
+    this.title = 'Products',
+    this.token,
+  });
 
+  final AppState appState;
   final String? categorySlug;
   final String title;
   final String? token;
@@ -19,6 +28,13 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
+  static const Map<String, String> _sortOptions = <String, String>{
+    'latest': 'Latest',
+    'price_asc': 'Price: Low-High',
+    'price_desc': 'Price: High-Low',
+    'rating': 'Rating',
+  };
+
   late final CatalogRepository _repository;
   bool _loading = true;
   String? _error;
@@ -27,6 +43,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final List<ProductListItem> _items = [];
   bool _loadingMore = false;
   bool _gridView = true;
+  ProductFilterQuery _filters = const ProductFilterQuery();
 
   @override
   void initState() {
@@ -40,7 +57,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
       setState(() { _loading = true; _error = null; _page = 1; _lastPage = 1; _items.clear(); });
     }
     try {
-      final response = await _repository.fetchProducts(page: _page, categorySlug: widget.categorySlug);
+      final response = await _repository.fetchProducts(
+        page: _page,
+        categorySlug: widget.categorySlug,
+        stateId: widget.appState.selectedState?.id,
+        districtId: widget.appState.selectedDistrict?.id,
+      );
       if (!mounted) return;
       setState(() { _items.addAll(response.items); _lastPage = response.lastPage; });
     } catch (error) {
@@ -57,6 +79,34 @@ class _ProductListScreenState extends State<ProductListScreen> {
     await _load(reset: false);
   }
 
+  List<BrandOption> _brandOptions() {
+    final mapped = <int, String>{};
+    for (final item in _items) {
+      if (item.brandId != null && item.brandName != null && item.brandName!.trim().isNotEmpty) {
+        mapped[item.brandId!] = item.brandName!.trim();
+      }
+    }
+    return mapped.entries.map((entry) => BrandOption(id: entry.key, name: entry.value)).toList(growable: false)
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  }
+
+  Future<void> _openFilters() async {
+    final nextFilters = await showProductFiltersSheet(
+      context,
+      initialFilters: _filters,
+      brandOptions: _brandOptions(),
+    );
+    if (nextFilters == null) return;
+    final isUnchanged = nextFilters.minPrice == _filters.minPrice &&
+        nextFilters.maxPrice == _filters.maxPrice &&
+        nextFilters.minRating == _filters.minRating &&
+        nextFilters.brandId == _filters.brandId &&
+        nextFilters.sort == _filters.sort;
+    if (isUnchanged) return;
+    setState(() => _filters = nextFilters);
+    _load(reset: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,42 +114,67 @@ class _ProductListScreenState extends State<ProductListScreen> {
         title: Text(widget.title),
         actions: [
           IconButton(
+            onPressed: _openFilters,
+            icon: Badge(
+              isLabelVisible: _filters.hasActiveFilters,
+              child: const Icon(Icons.filter_alt_outlined),
+            ),
+          ),
+          IconButton(
             onPressed: () => setState(() => _gridView = !_gridView),
             icon: Icon(_gridView ? Icons.view_list_rounded : Icons.grid_view_rounded),
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : _error != null
-              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.textMuted),
-                  const SizedBox(height: 12),
-                  Text(_error!, style: const TextStyle(color: AppColors.error)),
-                  const SizedBox(height: 12),
-                  FilledButton.tonal(onPressed: () => _load(reset: true), child: const Text('Retry')),
-                ]))
-              : _items.isEmpty
-                  ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
-                        child: const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text('No products found', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                    ]))
-                  : NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 200) _loadMore();
-                        return false;
-                      },
-                      child: RefreshIndicator(
-                        color: AppColors.primary,
-                        onRefresh: () => _load(reset: true),
-                        child: _gridView ? _buildGrid() : _buildList(),
-                      ),
-                    ),
+      body: Column(
+        children: [
+          if (_buildActiveFilterChips().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Wrap(spacing: 8, runSpacing: 8, children: _buildActiveFilterChips()),
+                  ),
+                  TextButton(onPressed: _clearAllFilters, child: const Text('Clear all')),
+                ],
+              ),
+            ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                : _error != null
+                    ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.textMuted),
+                        const SizedBox(height: 12),
+                        Text(_error!, style: const TextStyle(color: AppColors.error)),
+                        const SizedBox(height: 12),
+                        FilledButton.tonal(onPressed: () => _load(reset: true), child: const Text('Retry')),
+                      ]))
+                    : _items.isEmpty
+                        ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
+                              child: const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text('No products found', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                          ]))
+                        : NotificationListener<ScrollNotification>(
+                            onNotification: (notification) {
+                              if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 200) _loadMore();
+                              return false;
+                            },
+                            child: RefreshIndicator(
+                              color: AppColors.primary,
+                              onRefresh: () => _load(reset: true),
+                              child: _gridView ? _buildGrid() : _buildList(),
+                            ),
+                          ),
+          ),
+        ],
+      ),
     );
   }
 

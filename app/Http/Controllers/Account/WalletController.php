@@ -23,6 +23,13 @@ class WalletController extends Controller
         return view('account.wallet', compact('user', 'transactions'));
     }
 
+    public function transactions()
+    {
+        $transactions = WalletTransaction::where('user_id', auth()->id())->latest()->paginate(20);
+
+        return view('account.transactions', compact('transactions'));
+    }
+
     public function createTopup(Request $request)
     {
         $request->validate(['amount' => 'required|integer|min:10|max:50000']);
