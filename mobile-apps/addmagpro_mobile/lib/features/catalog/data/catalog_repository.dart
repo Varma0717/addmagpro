@@ -6,10 +6,21 @@ class CatalogRepository {
 
   final ApiClient _apiClient;
 
-  Future<ProductListResponse> fetchProducts({int page = 1, String? categorySlug}) async {
+  Future<ProductListResponse> fetchProducts({
+    int page = 1,
+    String? categorySlug,
+    int? stateId,
+    int? districtId,
+  }) async {
     final params = <String>['page=$page'];
     if (categorySlug != null && categorySlug.trim().isNotEmpty) {
       params.add('category_slug=${Uri.encodeComponent(categorySlug.trim())}');
+    }
+    if (stateId != null) {
+      params.add('state_id=$stateId');
+    }
+    if (districtId != null) {
+      params.add('district_id=$districtId');
     }
 
     final payload = await _apiClient.get('/products?${params.join('&')}');
@@ -21,8 +32,19 @@ class CatalogRepository {
     return ProductDetail.fromJson(payload);
   }
 
-  Future<ListingListResponse> fetchListings({int page = 1}) async {
-    final payload = await _apiClient.get('/listings?page=$page');
+  Future<ListingListResponse> fetchListings({
+    int page = 1,
+    int? stateId,
+    int? districtId,
+  }) async {
+    final params = <String>['page=$page'];
+    if (stateId != null) {
+      params.add('state_id=$stateId');
+    }
+    if (districtId != null) {
+      params.add('district_id=$districtId');
+    }
+    final payload = await _apiClient.get('/listings?${params.join('&')}');
     return ListingListResponse.fromJson(payload);
   }
 

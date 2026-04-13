@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app_state.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/catalog_repository.dart';
@@ -8,8 +9,15 @@ import '../models/catalog_models.dart';
 import 'product_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({super.key, this.categorySlug, this.title = 'Products', this.token});
+  const ProductListScreen({
+    super.key,
+    required this.appState,
+    this.categorySlug,
+    this.title = 'Products',
+    this.token,
+  });
 
+  final AppState appState;
   final String? categorySlug;
   final String title;
   final String? token;
@@ -40,7 +48,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
       setState(() { _loading = true; _error = null; _page = 1; _lastPage = 1; _items.clear(); });
     }
     try {
-      final response = await _repository.fetchProducts(page: _page, categorySlug: widget.categorySlug);
+      final response = await _repository.fetchProducts(
+        page: _page,
+        categorySlug: widget.categorySlug,
+        stateId: widget.appState.selectedState?.id,
+        districtId: widget.appState.selectedDistrict?.id,
+      );
       if (!mounted) return;
       setState(() { _items.addAll(response.items); _lastPage = response.lastPage; });
     } catch (error) {

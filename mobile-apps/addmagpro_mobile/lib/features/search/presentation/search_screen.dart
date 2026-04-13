@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_state.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../catalog/presentation/listing_detail_screen.dart';
@@ -9,8 +10,9 @@ import '../data/search_repository.dart';
 import '../models/search_models.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key, this.token});
+  const SearchScreen({super.key, required this.appState, this.token});
 
+  final AppState appState;
   final String? token;
 
   @override
@@ -47,7 +49,11 @@ class _SearchScreenState extends State<SearchScreen> {
     }
     setState(() { _loading = true; _error = null; });
     try {
-      final response = await _repository.search(query);
+      final response = await _repository.search(
+        query,
+        stateId: widget.appState.selectedState?.id,
+        districtId: widget.appState.selectedDistrict?.id,
+      );
       if (!mounted) return;
       setState(() => _results = response.results);
     } catch (error) {

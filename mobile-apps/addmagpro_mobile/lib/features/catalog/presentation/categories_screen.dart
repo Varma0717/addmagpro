@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app_state.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../home/data/home_repository.dart';
@@ -10,8 +11,9 @@ import '../models/catalog_models.dart';
 import 'product_detail_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
-  const CategoriesScreen({super.key, this.token});
+  const CategoriesScreen({super.key, required this.appState, this.token});
 
+  final AppState appState;
   final String? token;
 
   @override
@@ -48,7 +50,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     });
 
     try {
-      final feed = await _homeRepository.fetch();
+      final feed = await _homeRepository.fetch(
+        stateId: widget.appState.selectedState?.id,
+        districtId: widget.appState.selectedDistrict?.id,
+      );
       if (!mounted) return;
       setState(() {
         _categories = feed.categories;
@@ -84,6 +89,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         final response = await _catalogRepository.fetchProducts(
           page: _page,
           categorySlug: category.slug,
+          stateId: widget.appState.selectedState?.id,
+          districtId: widget.appState.selectedDistrict?.id,
         );
         if (!mounted) return;
         setState(() {

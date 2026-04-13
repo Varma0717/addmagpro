@@ -16,6 +16,7 @@ import '../catalog/presentation/listing_list_screen.dart';
 import '../catalog/presentation/product_detail_screen.dart';
 import '../catalog/presentation/product_list_screen.dart';
 import '../cart/presentation/cart_screen.dart';
+import '../location/models/location_models.dart';
 import '../wishlist/presentation/wishlist_screen.dart';
 import 'data/home_repository.dart';
 import 'models/home_feed_models.dart';
@@ -41,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final pages = <Widget>[
       _DashboardView(appState: widget.appState, token: token),
-      CategoriesScreen(token: token),
+      CategoriesScreen(appState: widget.appState, token: token),
       CartScreen(token: token, appState: widget.appState),
       WishlistScreen(token: token),
       AccountScreen(appState: widget.appState),
@@ -67,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               actions: [
                 IconButton(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SearchScreen(token: token))),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SearchScreen(appState: widget.appState, token: token))),
                   icon: const Icon(Icons.search_rounded),
                 ),
                 IconButton(
@@ -144,7 +145,12 @@ class _DashboardViewState extends State<_DashboardView> {
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final response = await _repository.fetch();
+      final selectedState = widget.appState.selectedState;
+      final selectedDistrict = widget.appState.selectedDistrict;
+      final response = await _repository.fetch(
+        stateId: selectedState?.id,
+        districtId: selectedDistrict?.id,
+      );
       if (!mounted) return;
       setState(() => _feed = response);
       _startBannerAutoScroll();
@@ -195,6 +201,14 @@ class _DashboardViewState extends State<_DashboardView> {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: _LocationSelector(
+              appState: widget.appState,
+              onLocationChanged: _load,
+            ),
+          ),
+
           // ── Banner Carousel ──
           if (feed.banners.isNotEmpty) ...[
             SizedBox(
@@ -314,7 +328,7 @@ class _DashboardViewState extends State<_DashboardView> {
                 itemBuilder: (_, index) {
                   final cat = feed.categories[index];
                   return GestureDetector(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(categorySlug: cat.slug, title: cat.name, token: widget.token))),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(appState: widget.appState, categorySlug: cat.slug, title: cat.name, token: widget.token))),
                     child: SizedBox(
                       width: 76,
                       child: Column(
@@ -348,7 +362,7 @@ class _DashboardViewState extends State<_DashboardView> {
             SectionHeader(
               title: 'Featured Products',
               actionLabel: 'View All',
-              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(title: 'Featured Products', token: widget.token))),
+              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(appState: widget.appState, title: 'Featured Products', token: widget.token))),
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
             const SizedBox(height: 14),
@@ -393,7 +407,7 @@ class _DashboardViewState extends State<_DashboardView> {
             SectionHeader(
               title: 'Local Services',
               actionLabel: 'View All',
-              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ListingListScreen(title: 'Nearby Services'))),
+              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ListingListScreen(appState: widget.appState, title: 'Nearby Services'))),
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
             const SizedBox(height: 12),
@@ -444,6 +458,152 @@ class _DashboardViewState extends State<_DashboardView> {
           Row(children: List.generate(2, (_) => Expanded(child: Container(height: 200, margin: const EdgeInsets.only(right: 12), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)))))),
         ],
       ),
+    );
+  }
+}
+
+class _LocationSelector extends StatelessWidget {
+  const _LocationSelector({
+    required this.appState,
+    required this.onLocationChanged,
+  });
+
+  final AppState appState;
+  final Future<void> Function() onLocationChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedState = appState.selectedState;
+    final selectedDistrict = appState.selectedDistrict;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.location_on_outlined, size: 18, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              selectedDistrict != null
+                  ? '${selectedDistrict.name}, ${selectedState?.name ?? ''}'
+                  : selectedState?.name ?? 'Select location',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Choose location',
+            icon: const Icon(Icons.keyboard_arrow_down_rounded),
+            onSelected: (value) async {
+              if (value == 'change') {
+                await _showLocationPicker(context);
+              } else if (value == 'clear') {
+                await appState.selectState(null);
+                await onLocationChanged();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem<String>(value: 'change', child: Text('Change location')),
+              if (selectedState != null) const PopupMenuItem<String>(value: 'clear', child: Text('Use all locations')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showLocationPicker(BuildContext context) async {
+    final selectedState = appState.selectedState;
+    LocationStateOption? draftState = selectedState;
+    LocationDistrictOption? draftDistrict = appState.selectedDistrict;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setLocalState) {
+            final districts = draftState?.id == appState.selectedState?.id
+                ? appState.locationDistricts
+                : <LocationDistrictOption>[];
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Choose your location', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<LocationStateOption>(
+                      value: draftState,
+                      decoration: const InputDecoration(labelText: 'State'),
+                      items: appState.locationStates
+                          .map((state) => DropdownMenuItem<LocationStateOption>(
+                                value: state,
+                                child: Text(state.name),
+                              ))
+                          .toList(growable: false),
+                      onChanged: (value) async {
+                        setLocalState(() {
+                          draftState = value;
+                          draftDistrict = null;
+                        });
+                        if (value != null) {
+                          await appState.selectState(value);
+                          setLocalState(() {});
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<LocationDistrictOption>(
+                      value: draftDistrict,
+                      decoration: const InputDecoration(labelText: 'District (optional)'),
+                      items: districts
+                          .map((district) => DropdownMenuItem<LocationDistrictOption>(
+                                value: district,
+                                child: Text(district.name),
+                              ))
+                          .toList(growable: false),
+                      onChanged: draftState == null
+                          ? null
+                          : (value) {
+                              setLocalState(() => draftDistrict = value);
+                            },
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: draftState == null
+                            ? null
+                            : () async {
+                                await appState.selectState(draftState);
+                                await appState.selectDistrict(draftDistrict);
+                                if (context.mounted) Navigator.of(context).pop();
+                                await onLocationChanged();
+                              },
+                        child: const Text('Apply location'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
