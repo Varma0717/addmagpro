@@ -30,4 +30,20 @@ class DeviceTokenController extends Controller
 
         return $this->success(null, 'Device token registered');
     }
+
+    public function destroy(Request $request)
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'string', 'max:2048'],
+        ]);
+
+        $deleted = $request->user()
+            ->deviceTokens()
+            ->where('token', $validated['token'])
+            ->delete();
+
+        return $this->success([
+            'deleted' => (bool) $deleted,
+        ], 'Device token removed');
+    }
 }

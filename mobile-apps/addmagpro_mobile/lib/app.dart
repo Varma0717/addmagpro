@@ -61,6 +61,14 @@ class _AddMagProAppState extends State<AddMagProApp> {
 
   void _onAppStateChanged() {
     final token = _appState.token;
+
+    if ((token == null || token.isEmpty) && _lastAuthToken != null && _lastAuthToken!.isNotEmpty) {
+      final authToken = _lastAuthToken!;
+      _lastAuthToken = null;
+      _pushNotificationService.unregisterToken(authToken: authToken);
+      return;
+    }
+
     if (token == null || token.isEmpty || token == _lastAuthToken) {
       return;
     }
