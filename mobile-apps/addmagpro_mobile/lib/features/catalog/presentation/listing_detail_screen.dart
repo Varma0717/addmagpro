@@ -73,7 +73,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                 imageUrl: listing.images[index],
                                 width: double.infinity,
                                 fit: BoxFit.cover,
-                                errorWidget: (_, __, ___) => Container(
+                                errorWidget: (_, _, _) => Container(
                                   color: AppColors.surface,
                                   child: const Center(child: Icon(Icons.broken_image_outlined, size: 48, color: AppColors.textMuted)),
                                 ),

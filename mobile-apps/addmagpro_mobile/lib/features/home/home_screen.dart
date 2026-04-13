@@ -218,7 +218,7 @@ class _DashboardViewState extends State<_DashboardView> {
                             fit: StackFit.expand,
                             children: [
                               if (banner.imageUrl != null && banner.imageUrl!.isNotEmpty)
-                                CachedNetworkImage(imageUrl: banner.imageUrl!, fit: BoxFit.cover, errorWidget: (_, __, ___) => _bannerPlaceholder(banner))
+                                CachedNetworkImage(imageUrl: banner.imageUrl!, fit: BoxFit.cover, errorWidget: (_, _, _) => _bannerPlaceholder(banner))
                               else
                                 _bannerPlaceholder(banner),
                               Positioned(
@@ -310,7 +310,7 @@ class _DashboardViewState extends State<_DashboardView> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: feed.categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 14),
+                separatorBuilder: (_, _) => const SizedBox(width: 14),
                 itemBuilder: (_, index) {
                   final cat = feed.categories[index];
                   return GestureDetector(
@@ -328,7 +328,7 @@ class _DashboardViewState extends State<_DashboardView> {
                               border: Border.all(color: AppColors.primary.withAlpha(30)),
                             ),
                             child: cat.imageUrl != null
-                                ? ClipRRect(borderRadius: BorderRadius.circular(18), child: CachedNetworkImage(imageUrl: cat.imageUrl!, fit: BoxFit.cover, errorWidget: (_, __, ___) => const Icon(Icons.category_rounded, color: AppColors.primary)))
+                                ? ClipRRect(borderRadius: BorderRadius.circular(18), child: CachedNetworkImage(imageUrl: cat.imageUrl!, fit: BoxFit.cover, errorWidget: (_, _, _) => const Icon(Icons.category_rounded, color: AppColors.primary)))
                                 : const Icon(Icons.category_rounded, color: AppColors.primary, size: 26),
                           ),
                           const SizedBox(height: 6),
@@ -358,7 +358,7 @@ class _DashboardViewState extends State<_DashboardView> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: feed.featuredProducts.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (_, index) {
                   final product = feed.featuredProducts[index];
                   return _FeaturedProductCard(product: product, token: widget.token);
@@ -378,7 +378,7 @@ class _DashboardViewState extends State<_DashboardView> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: feed.trendingProducts.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (_, index) {
                   final product = feed.trendingProducts[index];
                   return _FeaturedProductCard(product: product, token: widget.token);
@@ -477,7 +477,7 @@ class _FeaturedProductCard extends StatelessWidget {
                 height: 130,
                 width: double.infinity,
                 child: product.primaryImageUrl != null
-                    ? CachedNetworkImage(imageUrl: product.primaryImageUrl!, fit: BoxFit.cover, errorWidget: (_, __, ___) => _imagePlaceholder())
+                    ? CachedNetworkImage(imageUrl: product.primaryImageUrl!, fit: BoxFit.cover, errorWidget: (_, _, _) => _imagePlaceholder())
                     : _imagePlaceholder(),
               ),
             ),
@@ -534,7 +534,7 @@ class _ServiceCard extends StatelessWidget {
               height: 50,
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), color: AppColors.primaryLight),
               child: listing.primaryImageUrl != null
-                  ? ClipRRect(borderRadius: BorderRadius.circular(14), child: CachedNetworkImage(imageUrl: listing.primaryImageUrl!, fit: BoxFit.cover, errorWidget: (_, __, ___) => const Icon(Icons.storefront_rounded, color: AppColors.primary)))
+                  ? ClipRRect(borderRadius: BorderRadius.circular(14), child: CachedNetworkImage(imageUrl: listing.primaryImageUrl!, fit: BoxFit.cover, errorWidget: (_, _, _) => const Icon(Icons.storefront_rounded, color: AppColors.primary)))
                   : const Icon(Icons.storefront_rounded, color: AppColors.primary),
             ),
             const SizedBox(width: 14),

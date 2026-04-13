@@ -179,7 +179,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                               width: 36,
                               height: 36,
                               fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Container(
+                              errorWidget: (_, _, _) => Container(
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
@@ -312,7 +312,7 @@ class _ProductGridCard extends StatelessWidget {
                         imageUrl: product.primaryImageUrl!,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => Container(
+                        errorWidget: (_, _, _) => Container(
                           color: AppColors.surface,
                           child: const Center(child: Icon(Icons.image_outlined, color: AppColors.textMuted)),
                         ),

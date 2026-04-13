@@ -98,9 +98,9 @@ class CheckoutRepository {
         'payment_method': paymentMethod,
         'coupon_id': couponId,
         'use_wallet': useWallet,
-        if (razorpayOrderId != null) 'razorpay_order_id': razorpayOrderId,
-        if (razorpayPaymentId != null) 'razorpay_payment_id': razorpayPaymentId,
-        if (razorpaySignature != null) 'razorpay_signature': razorpaySignature,
+        'razorpay_order_id': ?razorpayOrderId,
+        'razorpay_payment_id': ?razorpayPaymentId,
+        'razorpay_signature': ?razorpaySignature,
       },
     );
 

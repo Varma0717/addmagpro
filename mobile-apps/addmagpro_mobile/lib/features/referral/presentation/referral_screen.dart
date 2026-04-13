@@ -65,7 +65,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
     final text = data.shareUrl.isNotEmpty
         ? 'Join AddMagPro using my referral code: ${data.referralCode}\n${data.shareUrl}'
         : 'Join AddMagPro using my referral code: ${data.referralCode}';
-    Share.share(text);
+    SharePlus.instance.share(ShareParams(text: text));
   }
 
   Future<void> _shareWhatsApp() async {

@@ -154,7 +154,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     borderRadius: BorderRadius.circular(10),
                     child: item.primaryImageUrl != null
                         ? CachedNetworkImage(imageUrl: item.primaryImageUrl!, width: 80, height: 80, fit: BoxFit.cover,
-                            errorWidget: (_, __, ___) => Container(width: 80, height: 80, color: AppColors.surface, child: const Icon(Icons.image_outlined, color: AppColors.textMuted)))
+                            errorWidget: (_, _, _) => Container(width: 80, height: 80, color: AppColors.surface, child: const Icon(Icons.image_outlined, color: AppColors.textMuted)))
                         : Container(width: 80, height: 80, color: AppColors.surface, child: const Icon(Icons.image_outlined, color: AppColors.textMuted)),
                   ),
                   const SizedBox(width: 12),
@@ -215,7 +215,7 @@ class _ProductGridCard extends StatelessWidget {
                         imageUrl: product.primaryImageUrl!,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => Container(color: AppColors.surface, child: const Center(child: Icon(Icons.image_outlined, color: AppColors.textMuted))),
+                        errorWidget: (_, _, _) => Container(color: AppColors.surface, child: const Center(child: Icon(Icons.image_outlined, color: AppColors.textMuted))),
                       )
                     : Container(color: AppColors.surface, child: const Center(child: Icon(Icons.image_outlined, color: AppColors.textMuted))),
               ),

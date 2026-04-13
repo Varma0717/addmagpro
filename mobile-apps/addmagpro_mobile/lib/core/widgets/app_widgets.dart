@@ -43,7 +43,7 @@ class AppNetworkImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
-        placeholder: (_, __) => Shimmer.fromColors(
+        placeholder: (_, _) => Shimmer.fromColors(
           baseColor: const Color(0xFFE5E7EB),
           highlightColor: const Color(0xFFF9FAFB),
           child: Container(
@@ -52,7 +52,7 @@ class AppNetworkImage extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        errorWidget: (_, __, ___) => Container(
+        errorWidget: (_, _, _) => Container(
           width: width,
           height: height,
           color: AppColors.borderLight,

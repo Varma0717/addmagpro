@@ -132,7 +132,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 : ListView.separated(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: _results.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.borderLight),
+                    separatorBuilder: (_, _) => const Divider(height: 1, color: AppColors.borderLight),
                     itemBuilder: (_, index) {
                       final item = _results[index];
                       return ListTile(

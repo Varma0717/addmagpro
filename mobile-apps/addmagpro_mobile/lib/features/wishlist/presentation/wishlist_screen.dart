@@ -152,7 +152,7 @@ class _WishlistCard extends StatelessWidget {
                             imageUrl: item.primaryImageUrl!,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorWidget: (_, __, ___) => Container(
+                            errorWidget: (_, _, _) => Container(
                               color: AppColors.surface,
                               child: const Center(child: Icon(Icons.image_outlined, color: AppColors.textMuted)),
                             ),

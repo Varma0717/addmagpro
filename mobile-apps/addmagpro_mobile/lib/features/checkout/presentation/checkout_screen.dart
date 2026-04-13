@@ -262,7 +262,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   value: _useWallet,
                   onChanged: (value) => setState(() => _useWallet = value),
                   title: const Text('Also use wallet balance', style: TextStyle(fontSize: 14)),
-                  activeColor: AppColors.primary,
+                  activeTrackColor: AppColors.primary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
@@ -304,10 +304,10 @@ class _PaymentOption extends StatelessWidget {
       ),
       child: RadioListTile<String>(
         value: value,
-        groupValue: groupValue,
-        onChanged: onChanged,
+        groupValue: groupValue, // ignore: deprecated_member_use
+        onChanged: onChanged, // ignore: deprecated_member_use
         title: Row(children: [Icon(icon, size: 20, color: selected ? AppColors.primary : AppColors.textMuted), const SizedBox(width: 10), Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: selected ? AppColors.primary : AppColors.textPrimary))]),
-        activeColor: AppColors.primary,
+        fillColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected) ? AppColors.primary : null),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 8),
       ),

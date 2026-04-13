@@ -232,7 +232,7 @@ class _OrderDetailScreenState extends State<_OrderDetailScreen> {
                   width: 56,
                   height: 56,
                   child: item.imageUrl != null
-                      ? CachedNetworkImage(imageUrl: item.imageUrl!, fit: BoxFit.cover, errorWidget: (_, __, ___) => Container(color: AppColors.surface, child: const Icon(Icons.image_outlined, color: AppColors.textMuted)))
+                      ? CachedNetworkImage(imageUrl: item.imageUrl!, fit: BoxFit.cover, errorWidget: (_, _, _) => Container(color: AppColors.surface, child: const Icon(Icons.image_outlined, color: AppColors.textMuted)))
                       : Container(color: AppColors.surface, child: const Icon(Icons.image_outlined, color: AppColors.textMuted)),
                 ),
               ),

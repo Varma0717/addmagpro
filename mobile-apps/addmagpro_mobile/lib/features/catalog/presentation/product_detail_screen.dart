@@ -87,7 +87,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void _share() {
     final product = _product;
     if (product == null) return;
-    Share.share('Check out ${product.name} on AddMagPro! ₹${product.effectivePrice.toStringAsFixed(0)}');
+    SharePlus.instance.share(ShareParams(text: 'Check out ${product.name} on AddMagPro! ₹${product.effectivePrice.toStringAsFixed(0)}'));
   }
 
   @override
@@ -181,7 +181,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     imageUrl: product.images[index],
                     fit: BoxFit.cover,
                     width: double.infinity,
-                    errorWidget: (_, __, ___) => Container(color: AppColors.surface, child: const Center(child: Icon(Icons.image_outlined, size: 48, color: AppColors.textMuted))),
+                    errorWidget: (_, _, _) => Container(color: AppColors.surface, child: const Center(child: Icon(Icons.image_outlined, size: 48, color: AppColors.textMuted))),
                   ),
                 ),
                 if (product.images.length > 1)

@@ -113,7 +113,7 @@ class _ListingListScreenState extends State<ListingListScreen> {
                                           width: 50,
                                           height: 50,
                                           fit: BoxFit.cover,
-                                          errorWidget: (_, __, ___) => Container(
+                                          errorWidget: (_, _, _) => Container(
                                             width: 50, height: 50,
                                             decoration: BoxDecoration(color: AppColors.success.withAlpha(20), borderRadius: BorderRadius.circular(10)),
                                             child: const Icon(Icons.storefront_outlined, color: AppColors.success, size: 22),

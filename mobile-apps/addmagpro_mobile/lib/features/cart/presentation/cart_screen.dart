@@ -144,7 +144,7 @@ class _CartScreenState extends State<CartScreen> {
                     width: 80,
                     height: 80,
                     child: item.product.primaryImageUrl != null
-                        ? CachedNetworkImage(imageUrl: item.product.primaryImageUrl!, fit: BoxFit.cover, errorWidget: (_, __, ___) => _imagePlaceholder())
+                        ? CachedNetworkImage(imageUrl: item.product.primaryImageUrl!, fit: BoxFit.cover, errorWidget: (_, _, _) => _imagePlaceholder())
                         : _imagePlaceholder(),
                   ),
                 ),
