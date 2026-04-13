@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_state.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../notifications/presentation/notifications_screen.dart';
 import '../../orders/presentation/orders_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
@@ -19,25 +20,26 @@ class AccountScreen extends StatelessWidget {
 
     return ListView(
       padding: const EdgeInsets.all(20),
-      children: <Widget>[
+      children: [
         // Profile header
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: AppColors.borderLight),
+            boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 8, offset: const Offset(0, 2))],
           ),
           child: Row(
-            children: <Widget>[
+            children: [
               CircleAvatar(
                 radius: 30,
-                backgroundColor: const Color(0xFFFFE2C7),
+                backgroundColor: AppColors.primaryLight,
                 backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
                 child: user?.avatarUrl == null
                     ? Text(
                         (user?.name ?? 'U').trim().characters.first.toUpperCase(),
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFFC2410C)),
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.primary),
                       )
                     : null,
               ),
@@ -45,16 +47,10 @@ class AccountScreen extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      user?.name ?? 'Member',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                    ),
+                  children: [
+                    Text(user?.name ?? 'Member', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                     const SizedBox(height: 2),
-                    Text(
-                      user?.phone ?? '',
-                      style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
-                    ),
+                    Text(user?.phone ?? '', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                   ],
                 ),
               ),
@@ -67,18 +63,17 @@ class AccountScreen extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: <Color>[Color(0xFFFF7F11), Color(0xFFFF9A3E)],
-            ),
+            gradient: AppColors.primaryGradient,
             borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: AppColors.primary.withAlpha(40), blurRadius: 12, offset: const Offset(0, 4))],
           ),
           child: Row(
-            children: <Widget>[
-              const Icon(Icons.account_balance_wallet, color: Colors.white, size: 28),
+            children: [
+              const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 28),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
+                children: [
                   const Text('Wallet Balance', style: TextStyle(color: Colors.white70, fontSize: 12)),
                   Text(
                     '₹${(user?.walletBalance ?? 0).toStringAsFixed(2)}',
@@ -110,14 +105,14 @@ class AccountScreen extends StatelessWidget {
           onTap: () => _push(context, ReferralScreen(token: token ?? '', memberName: user?.name ?? 'Member')),
         ),
         _MenuTile(
-          icon: Icons.notifications_none,
+          icon: Icons.notifications_none_rounded,
           label: 'Notifications',
           onTap: () => _push(context, NotificationsScreen(token: token ?? '')),
         ),
         const SizedBox(height: 12),
         _SectionLabel(label: 'Settings'),
         _MenuTile(
-          icon: Icons.person_outline,
+          icon: Icons.person_outline_rounded,
           label: 'Edit Profile',
           onTap: () => _push(context, ProfileScreen(appState: appState)),
         ),
@@ -133,9 +128,9 @@ class AccountScreen extends StatelessWidget {
                 builder: (ctx) => AlertDialog(
                   title: const Text('Logout'),
                   content: const Text('Are you sure you want to logout?'),
-                  actions: <Widget>[
+                  actions: [
                     TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Logout')),
+                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text('Logout', style: TextStyle(color: AppColors.error))),
                   ],
                 ),
               );
@@ -143,10 +138,10 @@ class AccountScreen extends StatelessWidget {
                 await appState.logout();
               }
             },
-            icon: const Icon(Icons.logout, color: Color(0xFFEF4444)),
-            label: const Text('Logout', style: TextStyle(color: Color(0xFFEF4444))),
+            icon: Icon(Icons.logout_rounded, color: AppColors.error),
+            label: Text('Logout', style: TextStyle(color: AppColors.error)),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFFECACA)),
+              side: BorderSide(color: AppColors.error.withAlpha(60)),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
@@ -172,12 +167,7 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8, left: 4),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF9CA3AF),
-          letterSpacing: 0.5,
-        ),
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.5),
       ),
     );
   }
@@ -198,7 +188,7 @@ class _MenuTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: ListTile(
         onTap: onTap,
@@ -206,16 +196,16 @@ class _MenuTile extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E8),
+            color: AppColors.primaryLight,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: const Color(0xFFC2410C), size: 20),
+          child: Icon(icon, color: AppColors.primary, size: 20),
         ),
-        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary)),
         subtitle: subtitle != null
-            ? Text(subtitle!, style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)))
+            ? Text(subtitle!, style: const TextStyle(fontSize: 12, color: AppColors.textMuted))
             : null,
-        trailing: const Icon(Icons.chevron_right, color: Color(0xFFD1D5DB)),
+        trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );

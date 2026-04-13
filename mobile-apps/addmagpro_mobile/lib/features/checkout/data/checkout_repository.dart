@@ -25,10 +25,50 @@ class CheckoutResult {
   }
 }
 
+class RazorpayOrderResult {
+  RazorpayOrderResult({
+    required this.orderId,
+    required this.amount,
+    required this.currency,
+    required this.keyId,
+  });
+
+  final String orderId;
+  final int amount;
+  final String currency;
+  final String keyId;
+
+  factory RazorpayOrderResult.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+    return RazorpayOrderResult(
+      orderId: (data['order_id'] as String?) ?? '',
+      amount: _toInt(data['amount']) ?? 0,
+      currency: (data['currency'] as String?) ?? 'INR',
+      keyId: (data['key_id'] as String?) ?? '',
+    );
+  }
+}
+
 class CheckoutRepository {
   CheckoutRepository({required ApiClient apiClient}) : _apiClient = apiClient;
 
   final ApiClient _apiClient;
+
+  Future<RazorpayOrderResult> createRazorpayOrder({
+    required String token,
+    int? couponId,
+    bool useWallet = false,
+  }) async {
+    final payload = await _apiClient.post(
+      '/account/checkout/razorpay/create',
+      bearerToken: token,
+      body: <String, dynamic>{
+        'coupon_id': couponId,
+        'use_wallet': useWallet,
+      },
+    );
+    return RazorpayOrderResult.fromJson(payload);
+  }
 
   Future<CheckoutResult> placeOrder({
     required String token,
@@ -41,6 +81,9 @@ class CheckoutRepository {
     required String paymentMethod,
     int? couponId,
     bool useWallet = false,
+    String? razorpayOrderId,
+    String? razorpayPaymentId,
+    String? razorpaySignature,
   }) async {
     final payload = await _apiClient.post(
       '/account/checkout/place-order',
@@ -55,6 +98,9 @@ class CheckoutRepository {
         'payment_method': paymentMethod,
         'coupon_id': couponId,
         'use_wallet': useWallet,
+        if (razorpayOrderId != null) 'razorpay_order_id': razorpayOrderId,
+        if (razorpayPaymentId != null) 'razorpay_payment_id': razorpayPaymentId,
+        if (razorpaySignature != null) 'razorpay_signature': razorpaySignature,
       },
     );
 

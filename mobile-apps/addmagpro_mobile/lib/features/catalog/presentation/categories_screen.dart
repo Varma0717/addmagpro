@@ -1,12 +1,13 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../home/data/home_repository.dart';
 import '../../home/models/home_feed_models.dart';
 import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
 import 'product_detail_screen.dart';
-import 'listing_list_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key, this.token});
@@ -121,17 +122,19 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loadingCategories) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
 
     if (_error != null && _categories.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(_error!, style: const TextStyle(color: Color(0xFFB42318))),
+          children: [
+            const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.textMuted),
             const SizedBox(height: 12),
-            TextButton(onPressed: _loadCategories, child: const Text('Retry')),
+            Text(_error!, style: const TextStyle(color: AppColors.error)),
+            const SizedBox(height: 12),
+            FilledButton.tonal(onPressed: _loadCategories, child: const Text('Retry')),
           ],
         ),
       );
@@ -142,12 +145,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     }
 
     return Row(
-      children: <Widget>[
+      children: [
         // Left sidebar — category list
         SizedBox(
           width: 100,
           child: Container(
-            color: const Color(0xFFF9FAFB),
+            color: AppColors.surface,
             child: ListView.builder(
               itemCount: _categories.length,
               itemBuilder: (context, index) {
@@ -161,29 +164,29 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       color: isSelected ? Colors.white : Colors.transparent,
                       border: Border(
                         left: BorderSide(
-                          color: isSelected ? const Color(0xFFFF7F11) : Colors.transparent,
+                          color: isSelected ? AppColors.primary : Colors.transparent,
                           width: 3,
                         ),
                       ),
                     ),
                     child: Column(
-                      children: <Widget>[
+                      children: [
                         if (category.imageUrl != null)
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              category.imageUrl!,
+                            child: CachedNetworkImage(
+                              imageUrl: category.imageUrl!,
                               width: 36,
                               height: 36,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
+                              errorWidget: (_, __, ___) => Container(
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF3E8),
+                                  color: AppColors.primaryLight,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(Icons.category_outlined, size: 18, color: Color(0xFFC2410C)),
+                                child: const Icon(Icons.category_outlined, size: 18, color: AppColors.primary),
                               ),
                             ),
                           )
@@ -192,10 +195,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF3E8),
+                              color: AppColors.primaryLight,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.category_outlined, size: 18, color: Color(0xFFC2410C)),
+                            child: const Icon(Icons.category_outlined, size: 18, color: AppColors.primary),
                           ),
                         const SizedBox(height: 6),
                         Text(
@@ -206,7 +209,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? const Color(0xFFFF7F11) : const Color(0xFF6B7280),
+                            color: isSelected ? AppColors.primary : AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -217,21 +220,21 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             ),
           ),
         ),
-        const VerticalDivider(width: 1, thickness: 1, color: Color(0xFFE5E7EB)),
+        const VerticalDivider(width: 1, thickness: 1, color: AppColors.borderLight),
         // Right side — product grid
         Expanded(
           child: _loadingProducts
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
               : _products.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          const Icon(Icons.inventory_2_outlined, size: 48, color: Color(0xFFD1D5DB)),
+                        children: [
+                          const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
                           const SizedBox(height: 8),
                           Text(
                             'No products in ${_categories[_selectedIndex].name}',
-                            style: const TextStyle(color: Color(0xFF6B7280)),
+                            style: const TextStyle(color: AppColors.textSecondary),
                           ),
                         ],
                       ),
@@ -290,56 +293,61 @@ class _ProductGridCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           color: Colors.white,
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.borderLight),
+          boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+          children: [
             Expanded(
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
                 child: product.primaryImageUrl != null
-                    ? Image.network(
-                        product.primaryImageUrl!,
+                    ? CachedNetworkImage(
+                        imageUrl: product.primaryImageUrl!,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: const Color(0xFFF3F4F6),
-                          child: const Center(child: Icon(Icons.image_outlined, color: Color(0xFF9CA3AF))),
+                        errorWidget: (_, __, ___) => Container(
+                          color: AppColors.surface,
+                          child: const Center(child: Icon(Icons.image_outlined, color: AppColors.textMuted)),
                         ),
                       )
                     : Container(
-                        color: const Color(0xFFF3F4F6),
-                        child: const Center(child: Icon(Icons.image_outlined, color: Color(0xFF9CA3AF))),
+                        color: AppColors.surface,
+                        child: const Center(child: Icon(Icons.image_outlined, color: AppColors.textMuted)),
                       ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
+                children: [
                   Text(
                     product.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 4),
                   Row(
-                    children: <Widget>[
+                    children: [
                       Text(
                         '₹${product.effectivePrice.toStringAsFixed(0)}',
-                        style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFFB54708), fontSize: 13),
+                        style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 13),
                       ),
                       const Spacer(),
                       if (product.ratingAvg != null)
-                        Text('⭐ ${product.ratingAvg!.toStringAsFixed(1)}', style: const TextStyle(fontSize: 11)),
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
+                          const SizedBox(width: 2),
+                          Text(product.ratingAvg!.toStringAsFixed(1), style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        ]),
                     ],
                   ),
                 ],

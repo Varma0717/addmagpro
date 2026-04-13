@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../data/wallet_repository.dart';
 import '../models/wallet_models.dart';
 
@@ -15,24 +18,31 @@ class WalletScreen extends StatefulWidget {
 
 class _WalletScreenState extends State<WalletScreen> {
   late final WalletRepository _repository;
+  late final Razorpay _razorpay;
   bool _loading = true;
   bool _submitting = false;
   String? _error;
   WalletOverview? _wallet;
+  int? _pendingTopupAmount;
 
   @override
   void initState() {
     super.initState();
     _repository = WalletRepository(apiClient: ApiClient());
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handleTopupSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handleTopupError);
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    _razorpay.clear();
+    super.dispose();
+  }
 
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
     try {
       final wallet = await _repository.fetch(widget.token);
       if (!mounted) return;
@@ -41,220 +51,275 @@ class _WalletScreenState extends State<WalletScreen> {
       if (!mounted) return;
       setState(() => _error = error.toString());
     } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _handleTopupSuccess(PaymentSuccessResponse response) async {
+    try {
+      await _repository.verifyTopup(
+        widget.token,
+        razorpayOrderId: response.orderId ?? '',
+        razorpayPaymentId: response.paymentId ?? '',
+        razorpaySignature: response.signature ?? '',
+        amount: _pendingTopupAmount ?? 0,
+      );
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('₹${_pendingTopupAmount ?? 0} added to wallet!'), behavior: SnackBarBehavior.floating, backgroundColor: AppColors.success),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Verification failed: $error')));
+    }
+    _pendingTopupAmount = null;
+  }
+
+  void _handleTopupError(PaymentFailureResponse response) {
+    _pendingTopupAmount = null;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Payment failed: ${response.message ?? 'Unknown error'}'), backgroundColor: AppColors.error),
+    );
   }
 
   Future<void> _requestWithdraw() async {
     final controller = TextEditingController();
     final remarksController = TextEditingController();
-    final amount = await showDialog<double>(
+    final amount = await showModalBottomSheet<double>(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Withdraw Request'),
-          content: Column(
+        return Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Withdraw Request', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 16),
               TextField(
                 controller: controller,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Amount'),
+                decoration: const InputDecoration(labelText: 'Amount (₹)', prefixIcon: Icon(Icons.currency_rupee_rounded)),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: remarksController,
-                decoration: const InputDecoration(labelText: 'Remarks (optional)'),
+                decoration: const InputDecoration(labelText: 'Remarks (optional)', prefixIcon: Icon(Icons.notes_rounded)),
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(double.tryParse(controller.text.trim())),
+                style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 52)),
+                child: const Text('Submit Withdraw'),
               ),
             ],
           ),
-          actions: <Widget>[
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(context).pop(double.tryParse(controller.text.trim()));
-              },
-              child: const Text('Submit'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (amount == null) {
-      return;
-    }
-
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
-
-    try {
-      await _repository.submitWithdraw(
-        widget.token,
-        amount: amount,
-        remarks: remarksController.text.trim(),
-      );
-      await _load();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Withdraw request submitted')),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _error = error.toString());
-    } finally {
-      if (mounted) {
-        setState(() => _submitting = false);
-      }
-    }
-  }
-
-  Future<void> _createTopupOrder() async {
-    final amount = await showDialog<int>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Create Top-up Order'),
-          content: const Text('Select a top-up amount. Payment verification can use the returned Razorpay order id.'),
-          actions: <Widget>[
-            for (final option in _wallet?.presetAmounts ?? <int>[100, 200, 500])
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(option),
-                child: Text('₹$option'),
-              ),
-          ],
         );
       },
     );
 
     if (amount == null) return;
 
+    setState(() { _submitting = true; _error = null; });
     try {
-      final order = await _repository.createTopupOrder(widget.token, amount: amount);
+      await _repository.submitWithdraw(widget.token, amount: amount, remarks: remarksController.text.trim());
+      await _load();
       if (!mounted) return;
-      showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Razorpay Order Created'),
-          content: Text('Order ID: ${order.orderId}\nAmount: ${order.amount / 100} ${order.currency}\nKey: ${order.keyId}'),
-          actions: <Widget>[
-            FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
-          ],
-        ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Withdraw request submitted'), behavior: SnackBarBehavior.floating, backgroundColor: AppColors.success),
       );
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = error.toString());
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _startTopup() async {
+    final presets = _wallet?.presetAmounts ?? [100, 200, 500];
+    final customController = TextEditingController();
+    final amount = await showModalBottomSheet<int>(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Top Up Wallet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              const Text('Select an amount or enter custom', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              const SizedBox(height: 18),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: presets.map((amt) => OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(amt),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('₹$amt', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.primary)),
+                )).toList(),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: customController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Custom amount (₹)', prefixIcon: Icon(Icons.edit_rounded)),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(int.tryParse(customController.text.trim())),
+                style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 52)),
+                child: const Text('Proceed to Pay'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (amount == null || amount <= 0) return;
+
+    try {
+      _pendingTopupAmount = amount;
+      final order = await _repository.createTopupOrder(widget.token, amount: amount);
+      final options = <String, dynamic>{
+        'key': order.keyId,
+        'amount': order.amount,
+        'currency': order.currency,
+        'order_id': order.orderId,
+        'name': 'AddMagPro',
+        'description': 'Wallet Top-up ₹$amount',
+        'theme': {'color': '#FF7F11'},
+      };
+      _razorpay.open(options);
+    } catch (error) {
+      _pendingTopupAmount = null;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
 
     if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(_error!, style: const TextStyle(color: Color(0xFFB42318))),
-        ),
-      );
+      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.textMuted),
+        const SizedBox(height: 12),
+        Text(_error!, style: const TextStyle(color: AppColors.textMuted), textAlign: TextAlign.center),
+        const SizedBox(height: 12),
+        FilledButton.tonal(onPressed: _load, child: const Text('Retry')),
+      ]));
     }
 
     final wallet = _wallet;
     if (wallet == null) {
-      return const Center(child: Text('Wallet data unavailable'));
+      return const EmptyState(icon: Icons.account_balance_wallet_outlined, title: 'Wallet unavailable');
     }
 
     return RefreshIndicator(
+      color: AppColors.primary,
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: <Widget>[
+        padding: const EdgeInsets.all(16),
+        children: [
+          // ── Balance Card ──
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF111827),
+              gradient: AppColors.darkGradient,
               borderRadius: BorderRadius.circular(24),
+              boxShadow: [BoxShadow(color: Colors.black.withAlpha(30), blurRadius: 16, offset: const Offset(0, 6))],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const Text('Wallet balance', style: TextStyle(color: Color(0xFF9CA3AF))),
-                const SizedBox(height: 10),
-                Text(
-                  '₹${wallet.balance.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 34,
-                  ),
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(color: Colors.white.withAlpha(25), borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('Wallet Balance', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Live account data from your AddMagPro wallet.',
-                  style: TextStyle(color: Color(0xFFD1D5DB), height: 1.4),
-                ),
+                const SizedBox(height: 16),
+                Text('₹${wallet.balance.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 36)),
               ],
             ),
           ),
           const SizedBox(height: 16),
+
+          // ── Action Buttons ──
           Row(
-            children: <Widget>[
+            children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: _createTopupOrder,
+                child: OutlinedButton.icon(
+                  onPressed: _startTopup,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Top Up'),
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
-                    backgroundColor: Colors.white,
+                    minimumSize: const Size(0, 52),
+                    side: const BorderSide(color: AppColors.primary),
+                    foregroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Top up'),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: FilledButton(
+                child: FilledButton.icon(
                   onPressed: _submitting ? null : _requestWithdraw,
-                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                  child: Text(_submitting ? 'Submitting...' : 'Withdraw'),
+                  icon: const Icon(Icons.arrow_upward_rounded),
+                  label: Text(_submitting ? 'Submitting...' : 'Withdraw'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 52),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 22),
-          Text(
-            'Recent transactions',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
+          const SizedBox(height: 24),
+
+          // ── Transactions ──
+          SectionHeader(title: 'Recent Transactions', padding: EdgeInsets.zero),
           const SizedBox(height: 12),
           if (wallet.transactions.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('No transactions found'),
-            ),
-          for (final transaction in wallet.transactions) _WalletTransactionCard(item: transaction),
-          const SizedBox(height: 8),
-          Text(
-            'Withdraw requests',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Center(child: Text('No transactions yet', style: TextStyle(color: AppColors.textMuted))))
+          else
+            ...wallet.transactions.map((t) => _WalletTransactionCard(item: t)),
+          const SizedBox(height: 20),
+
+          // ── Withdraw Requests ──
+          SectionHeader(title: 'Withdraw Requests', padding: EdgeInsets.zero),
           const SizedBox(height: 12),
           if (wallet.withdrawRequests.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('No withdraw requests yet'),
-            ),
-          for (final withdrawRequest in wallet.withdrawRequests) _WithdrawCard(item: withdrawRequest),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Center(child: Text('No withdraw requests yet', style: TextStyle(color: AppColors.textMuted))))
+          else
+            ...wallet.withdrawRequests.map((w) => _WithdrawCard(item: w)),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -270,43 +335,41 @@ class _WalletTransactionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 0.5),
       ),
       child: Row(
-        children: <Widget>[
+        children: [
           Container(
             width: 42,
             height: 42,
             decoration: BoxDecoration(
               color: item.isCredit ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               item.isCredit ? Icons.south_west_rounded : Icons.north_east_rounded,
-              color: item.isCredit ? const Color(0xFF067647) : const Color(0xFFB42318),
+              color: item.isCredit ? AppColors.success : AppColors.error,
+              size: 20,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(item.description, style: const TextStyle(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(_formatDate(item.createdAt), style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12)),
+              children: [
+                Text(item.description, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
+                const SizedBox(height: 3),
+                Text(_formatDate(item.createdAt), style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
               ],
             ),
           ),
           Text(
             '${item.isCredit ? '+' : '-'}₹${item.amount.toStringAsFixed(0)}',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: item.isCredit ? const Color(0xFF067647) : const Color(0xFFB42318),
-            ),
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: item.isCredit ? AppColors.success : AppColors.error),
           ),
         ],
       ),
@@ -327,51 +390,27 @@ class _WithdrawCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final approved = item.status == 'approved';
-    final pending = item.status == 'pending';
-
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 0.5),
       ),
       child: Row(
-        children: <Widget>[
+        children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(item.requestNo, style: const TextStyle(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text('₹${item.amount.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF6B7280))),
+              children: [
+                Text(item.requestNo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
+                const SizedBox(height: 3),
+                Text('₹${item.amount.toStringAsFixed(0)}', style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w700)),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: approved
-                  ? const Color(0xFFECFDF3)
-                  : pending
-                      ? const Color(0xFFFFF7ED)
-                      : const Color(0xFFF3F4F6),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              item.status,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: approved
-                    ? const Color(0xFF067647)
-                    : pending
-                        ? const Color(0xFFB54708)
-                        : const Color(0xFF4B5563),
-              ),
-            ),
-          ),
+          StatusChip(label: item.status),
         ],
       ),
     );

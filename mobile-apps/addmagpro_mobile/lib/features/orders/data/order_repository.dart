@@ -16,4 +16,13 @@ class OrderRepository {
 
     return data.whereType<Map<String, dynamic>>().map(OrderSummary.fromJson).toList();
   }
+
+  Future<OrderDetail> fetchDetail(String token, {required int orderId}) async {
+    final payload = await _apiClient.get('/account/orders/$orderId', bearerToken: token);
+    final data = payload['data'];
+    if (data is! Map<String, dynamic>) {
+      throw ApiException('Invalid order detail response');
+    }
+    return OrderDetail.fromJson(data);
+  }
 }

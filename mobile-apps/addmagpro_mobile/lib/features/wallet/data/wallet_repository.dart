@@ -56,4 +56,23 @@ class WalletRepository {
 
     return WalletTopupOrder.fromJson(data);
   }
+
+  Future<void> verifyTopup(
+    String token, {
+    required String razorpayOrderId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
+    required int amount,
+  }) async {
+    await _apiClient.post(
+      '/account/wallet/topup/verify',
+      bearerToken: token,
+      body: <String, dynamic>{
+        'razorpay_order_id': razorpayOrderId,
+        'razorpay_payment_id': razorpayPaymentId,
+        'razorpay_signature': razorpaySignature,
+        'amount': amount,
+      },
+    );
+  }
 }
