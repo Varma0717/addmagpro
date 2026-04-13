@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Referral;
+use App\Models\User;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
 
@@ -27,15 +28,23 @@ class ReferralController extends Controller
         $whatsappUrl = 'https://wa.me/?text=' . urlencode(
             "Join AdMagPro using my referral code {$user->referral_code} and earn rewards!\n{$shareUrl}"
         );
+        $activeReferrals = Referral::query()
+            ->where('referrer_id', $user->id)
+            ->where('status', 'active')
+            ->count();
+        $teamStructure = $this->buildTeamStructure($user->id);
 
         return $this->success([
             'summary' => [
                 'referral_code' => $user->referral_code,
                 'total_referrals' => $referrals->total(),
+                'active_referrals' => $activeReferrals,
+                'inactive_referrals' => max($referrals->total() - $activeReferrals, 0),
                 'total_earnings' => round((float) $user->walletTransactions()
                     ->where('type', 'credit')
                     ->where('reference_type', 'referrals')
                     ->sum('amount'), 2),
+                'team_structure' => $teamStructure,
             ],
             'share' => [
                 'share_url' => $shareUrl,
@@ -103,5 +112,49 @@ class ReferralController extends Controller
                 ],
             ]
         );
+    }
+
+    private function buildTeamStructure(int $userId): array
+    {
+        $levels = [];
+        $parentIds = [$userId];
+        $depth = 1;
+        $teamSize = 0;
+
+        while (!empty($parentIds) && $depth <= 5) {
+            $members = User::query()
+                ->whereIn('referred_by', $parentIds)
+                ->select('id', 'name', 'phone', 'avatar', 'referred_by')
+                ->orderBy('name')
+                ->get();
+
+            if ($members->isEmpty()) {
+                break;
+            }
+
+            $levels[] = [
+                'level' => $depth,
+                'count' => $members->count(),
+                'members' => $members->map(function (User $member): array {
+                    return [
+                        'id' => $member->id,
+                        'name' => $member->name,
+                        'phone' => $member->phone,
+                        'avatar_url' => $member->avatar ? imageUrl($member->avatar) : null,
+                        'referred_by' => $member->referred_by,
+                    ];
+                })->values()->all(),
+            ];
+
+            $teamSize += $members->count();
+            $parentIds = $members->pluck('id')->all();
+            $depth++;
+        }
+
+        return [
+            'total_team_size' => $teamSize,
+            'max_depth' => count($levels),
+            'levels' => $levels,
+        ];
     }
 }
