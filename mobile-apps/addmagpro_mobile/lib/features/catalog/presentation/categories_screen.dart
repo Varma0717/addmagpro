@@ -34,6 +34,13 @@ class CategoriesScreen extends StatefulWidget {
 }
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
+  static const Map<String, String> _sortOptions = <String, String>{
+    'latest': 'Latest',
+    'price_asc': 'Price: Low-High',
+    'price_desc': 'Price: High-Low',
+    'rating': 'Rating',
+  };
+
   late final HomeRepository _homeRepository;
   late final CatalogRepository _catalogRepository;
   bool _loadingCategories = true;

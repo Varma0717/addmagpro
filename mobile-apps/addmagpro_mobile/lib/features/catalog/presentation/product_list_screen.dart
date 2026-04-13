@@ -28,6 +28,13 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
+  static const Map<String, String> _sortOptions = <String, String>{
+    'latest': 'Latest',
+    'price_asc': 'Price: Low-High',
+    'price_desc': 'Price: High-Low',
+    'rating': 'Rating',
+  };
+
   late final CatalogRepository _repository;
   bool _loading = true;
   String? _error;
@@ -119,37 +126,55 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : _error != null
-              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.textMuted),
-                  const SizedBox(height: 12),
-                  Text(_error!, style: const TextStyle(color: AppColors.error)),
-                  const SizedBox(height: 12),
-                  FilledButton.tonal(onPressed: () => _load(reset: true), child: const Text('Retry')),
-                ]))
-              : _items.isEmpty
-                  ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
-                        child: const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text('No products found', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                    ]))
-                  : NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 200) _loadMore();
-                        return false;
-                      },
-                      child: RefreshIndicator(
-                        color: AppColors.primary,
-                        onRefresh: () => _load(reset: true),
-                        child: _gridView ? _buildGrid() : _buildList(),
-                      ),
-                    ),
+      body: Column(
+        children: [
+          if (_buildActiveFilterChips().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Wrap(spacing: 8, runSpacing: 8, children: _buildActiveFilterChips()),
+                  ),
+                  TextButton(onPressed: _clearAllFilters, child: const Text('Clear all')),
+                ],
+              ),
+            ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                : _error != null
+                    ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.textMuted),
+                        const SizedBox(height: 12),
+                        Text(_error!, style: const TextStyle(color: AppColors.error)),
+                        const SizedBox(height: 12),
+                        FilledButton.tonal(onPressed: () => _load(reset: true), child: const Text('Retry')),
+                      ]))
+                    : _items.isEmpty
+                        ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
+                              child: const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text('No products found', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                          ]))
+                        : NotificationListener<ScrollNotification>(
+                            onNotification: (notification) {
+                              if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 200) _loadMore();
+                              return false;
+                            },
+                            child: RefreshIndicator(
+                              color: AppColors.primary,
+                              onRefresh: () => _load(reset: true),
+                              child: _gridView ? _buildGrid() : _buildList(),
+                            ),
+                          ),
+          ),
+        ],
+      ),
     );
   }
 
