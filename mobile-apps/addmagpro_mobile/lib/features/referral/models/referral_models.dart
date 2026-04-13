@@ -6,6 +6,8 @@ class ReferralResponse {
     required this.shareUrl,
     required this.whatsappUrl,
     required this.referrals,
+    required this.teamStructure,
+    required this.levelSummary,
   });
 
   final String referralCode;
@@ -14,6 +16,8 @@ class ReferralResponse {
   final String shareUrl;
   final String whatsappUrl;
   final List<ReferralItem> referrals;
+  final List<TeamNode> teamStructure;
+  final List<LevelSummary> levelSummary;
 
   factory ReferralResponse.fromJson(Map<String, dynamic> json) {
     final summary = json['summary'] as Map<String, dynamic>? ?? <String, dynamic>{};
@@ -21,6 +25,14 @@ class ReferralResponse {
     final items = (json['referrals'] as List<dynamic>? ?? <dynamic>[])
         .whereType<Map<String, dynamic>>()
         .map(ReferralItem.fromJson)
+        .toList();
+    final team = (json['team_structure'] as List<dynamic>? ?? <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(TeamNode.fromJson)
+        .toList();
+    final summaryByLevel = (json['level_summary'] as List<dynamic>? ?? <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(LevelSummary.fromJson)
         .toList();
 
     return ReferralResponse(
@@ -30,6 +42,8 @@ class ReferralResponse {
       shareUrl: share['share_url'] as String? ?? '',
       whatsappUrl: share['whatsapp_url'] as String? ?? '',
       referrals: items,
+      teamStructure: team,
+      levelSummary: summaryByLevel,
     );
   }
 }
@@ -42,6 +56,9 @@ class ReferralItem {
     required this.purchaseRewardGiven,
     required this.joinedAt,
     required this.member,
+    required this.parentId,
+    required this.childId,
+    required this.depth,
   });
 
   final int id;
@@ -50,8 +67,13 @@ class ReferralItem {
   final bool purchaseRewardGiven;
   final DateTime? joinedAt;
   final ReferralMember member;
+  final int? parentId;
+  final int? childId;
+  final int depth;
 
   factory ReferralItem.fromJson(Map<String, dynamic> json) {
+    final team = json['team'] as Map<String, dynamic>? ?? <String, dynamic>{};
+
     return ReferralItem(
       id: (json['id'] as num?)?.toInt() ?? 0,
       status: json['status'] as String? ?? 'pending',
@@ -61,6 +83,75 @@ class ReferralItem {
       member: ReferralMember.fromJson(
         json['referred_user'] as Map<String, dynamic>? ?? <String, dynamic>{},
       ),
+      parentId: (team['parent_id'] as num?)?.toInt(),
+      childId: (team['child_id'] as num?)?.toInt(),
+      depth: (team['depth'] as num?)?.toInt() ?? 1,
+    );
+  }
+}
+
+class TeamNode {
+  const TeamNode({
+    required this.id,
+    required this.parentId,
+    required this.childId,
+    required this.depth,
+    required this.status,
+    required this.signupRewardGiven,
+    required this.purchaseRewardGiven,
+    required this.joinedAt,
+    required this.member,
+  });
+
+  final int id;
+  final int? parentId;
+  final int? childId;
+  final int depth;
+  final String status;
+  final bool signupRewardGiven;
+  final bool purchaseRewardGiven;
+  final DateTime? joinedAt;
+  final ReferralMember member;
+
+  factory TeamNode.fromJson(Map<String, dynamic> json) {
+    return TeamNode(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      parentId: (json['parent_id'] as num?)?.toInt(),
+      childId: (json['child_id'] as num?)?.toInt(),
+      depth: (json['depth'] as num?)?.toInt() ?? 1,
+      status: json['status'] as String? ?? 'pending',
+      signupRewardGiven: json['signup_reward_given'] as bool? ?? false,
+      purchaseRewardGiven: json['purchase_reward_given'] as bool? ?? false,
+      joinedAt: DateTime.tryParse(json['joined_at']?.toString() ?? ''),
+      member: ReferralMember.fromJson(
+        json['member'] as Map<String, dynamic>? ?? <String, dynamic>{},
+      ),
+    );
+  }
+}
+
+class LevelSummary {
+  const LevelSummary({
+    required this.depth,
+    required this.members,
+    required this.activeMembers,
+    required this.inactiveMembers,
+    required this.earnings,
+  });
+
+  final int depth;
+  final int members;
+  final int activeMembers;
+  final int inactiveMembers;
+  final double earnings;
+
+  factory LevelSummary.fromJson(Map<String, dynamic> json) {
+    return LevelSummary(
+      depth: (json['depth'] as num?)?.toInt() ?? 1,
+      members: (json['members'] as num?)?.toInt() ?? 0,
+      activeMembers: (json['active_members'] as num?)?.toInt() ?? 0,
+      inactiveMembers: (json['inactive_members'] as num?)?.toInt() ?? 0,
+      earnings: (json['earnings'] as num?)?.toDouble() ?? 0,
     );
   }
 }
@@ -71,12 +162,14 @@ class ReferralMember {
     required this.name,
     required this.phone,
     required this.avatarUrl,
+    required this.isActive,
   });
 
   final int? id;
   final String name;
   final String? phone;
   final String? avatarUrl;
+  final bool isActive;
 
   factory ReferralMember.fromJson(Map<String, dynamic> json) {
     return ReferralMember(
@@ -84,6 +177,7 @@ class ReferralMember {
       name: json['name'] as String? ?? 'Member',
       phone: json['phone'] as String?,
       avatarUrl: json['avatar_url'] as String?,
+      isActive: json['is_active'] as bool? ?? false,
     );
   }
 }

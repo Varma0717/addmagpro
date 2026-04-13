@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    public function __construct(private readonly PushNotificationService $pushNotifications) {}
     public function index(Request $request)
     {
         $orders = Order::with('user')
@@ -32,6 +34,14 @@ class OrderController extends Controller
         ]);
 
         $order->update(['status' => $request->status]);
+
+        $this->pushNotifications->notifyUser(
+            $order->user,
+            'Order status updated',
+            "Your order {$order->order_number} is now {$request->status}.",
+            'order',
+            ['event' => 'order_status', 'order_id' => (string) $order->id, 'status' => $request->status],
+        );
 
         // Trigger purchase reward on delivery
         if ($request->status === 'delivered' && $order->payment_status === 'paid') {

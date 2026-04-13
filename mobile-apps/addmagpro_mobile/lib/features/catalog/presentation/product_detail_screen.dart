@@ -8,6 +8,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../cart/data/cart_repository.dart';
+import '../../wishlist/data/wishlist_repository.dart';
 import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
 import '../../wishlist/data/wishlist_repository.dart';
@@ -29,8 +30,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final PageController _imageController = PageController();
   bool _loading = true;
   bool _addingToCart = false;
-  bool _wishlistLoading = false;
-  bool _wishlistSelected = false;
+  bool _wishlistBusy = false;
+  bool _wishlisted = false;
   String? _error;
   ProductDetail? _product;
   int _quantity = 1;
@@ -56,12 +57,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       final data = await _catalogRepository.fetchProductDetail(widget.slug);
       if (!mounted) return;
       setState(() => _product = data);
-      await _loadWishlistState(data.id);
+      await _initializeWishlistState(data.id);
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = error.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _initializeWishlistState(int productId) async {
+    final token = widget.token;
+    if (token == null) {
+      if (!mounted) return;
+      setState(() => _wishlisted = false);
+      return;
+    }
+    try {
+      final inWishlist = await _wishlistRepository.check(token: token, productId: productId);
+      if (!mounted) return;
+      setState(() => _wishlisted = inWishlist);
+    } catch (_) {
+      // Keep the default state on check failure.
     }
   }
 
@@ -153,6 +170,45 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     SharePlus.instance.share(ShareParams(text: 'Check out ${product.name} on AddMagPro! ₹${product.effectivePrice.toStringAsFixed(0)}'));
   }
 
+  Future<void> _toggleWishlist() async {
+    final token = widget.token;
+    final product = _product;
+    if (product == null || _wishlistBusy) return;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login required to manage wishlist'), behavior: SnackBarBehavior.floating),
+      );
+      return;
+    }
+
+    final previous = _wishlisted;
+    final optimistic = !previous;
+    setState(() {
+      _wishlistBusy = true;
+      _wishlisted = optimistic;
+    });
+
+    try {
+      final inWishlist = await _wishlistRepository.toggle(token: token, productId: product.id);
+      if (!mounted) return;
+      setState(() => _wishlisted = inWishlist);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(inWishlist ? '${product.name} added to wishlist' : '${product.name} removed from wishlist'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _wishlisted = previous);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString()), behavior: SnackBarBehavior.floating),
+      );
+    } finally {
+      if (mounted) setState(() => _wishlistBusy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final product = _product;
@@ -163,18 +219,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         actions: [
           if (product != null)
             IconButton(
-              onPressed: _wishlistLoading ? null : _toggleWishlist,
-              icon: _wishlistLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(
-                      _wishlistSelected ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                      color: _wishlistSelected ? AppColors.error : null,
-                    ),
-              tooltip: _wishlistSelected ? 'Remove from wishlist' : 'Add to wishlist',
+              onPressed: _wishlistBusy ? null : _toggleWishlist,
+              icon: Icon(_wishlisted ? Icons.favorite_rounded : Icons.favorite_border_rounded),
+              color: _wishlisted ? AppColors.error : null,
             ),
           if (product != null) IconButton(onPressed: _share, icon: const Icon(Icons.share_rounded)),
         ],
