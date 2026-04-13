@@ -18,6 +18,6 @@ if (!function_exists('imageUrl')) {
             return asset($path);
         }
 
-        return Storage::url($path);
+        return Storage::disk('public')->url($path);
     }
 }

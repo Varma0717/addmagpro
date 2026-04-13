@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -55,13 +56,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     try {
       final data = await _catalogRepository.fetchProductDetail(widget.slug);
       if (!mounted) return;
-      setState(() => _product = data);
-      await _initializeWishlistState(data.id);
+      setState(() { _product = data; _loading = false; });
+      _initializeWishlistState(data.id);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = error.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      setState(() { _error = error.toString(); _loading = false; });
     }
   }
 
@@ -437,6 +436,60 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   product.description?.trim().isNotEmpty == true ? product.description! : 'No description available.',
                   style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.7),
                 ),
+
+                // Specifications Accordion
+                if (product.shortDescription != null && product.shortDescription!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  const Divider(height: 1, color: AppColors.borderLight),
+                  Theme(
+                    data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                    child: ExpansionTile(
+                      tilePadding: EdgeInsets.zero,
+                      childrenPadding: const EdgeInsets.only(bottom: 16),
+                      title: const Text('Specifications', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                      initiallyExpanded: true,
+                      children: [
+                        Text(product.shortDescription!, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.7)),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Category
+                if (product.category != null) ...[
+                  const Divider(height: 1, color: AppColors.borderLight),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.category_outlined, size: 18, color: AppColors.textMuted),
+                        const SizedBox(width: 8),
+                        Text('Category: ', style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                        Text(product.category!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Reviews Section
+                if (product.reviews.isNotEmpty) ...[
+                  const Divider(height: 1, color: AppColors.borderLight),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      const Text('Reviews', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
+                        child: Text('${product.reviews.length}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ...product.reviews.take(5).map((review) => _ReviewCard(review: review)),
+                ],
+
                 const SizedBox(height: 80),
               ],
             ),
@@ -469,6 +522,65 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  const _ReviewCard({required this.review});
+  final ProductReview review;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = review.createdAt != null ? DateTime.tryParse(review.createdAt!) : null;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
+                child: Center(child: Text(
+                  (review.userName ?? '?')[0].toUpperCase(),
+                  style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary, fontSize: 14),
+                )),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(review.userName ?? 'Anonymous', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
+                    if (date != null)
+                      Text(DateFormat('dd MMM yyyy').format(date), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(5, (i) => Icon(
+                  i < review.rating ? Icons.star_rounded : Icons.star_border_rounded,
+                  size: 16,
+                  color: i < review.rating ? const Color(0xFFF59E0B) : AppColors.borderLight,
+                )),
+              ),
+            ],
+          ),
+          if (review.comment != null && review.comment!.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(review.comment!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.6)),
+          ],
         ],
       ),
     );

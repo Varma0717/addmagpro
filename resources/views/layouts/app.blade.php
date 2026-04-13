@@ -38,7 +38,7 @@
                 </a>
 
                 {{-- Location Selector --}}
-                <div class="hidden md:flex items-center flex-shrink-0" x-data="locationPicker()" x-init="init()">
+                <div class="hidden md:flex items-center flex-shrink-0 relative" x-data="locationPicker()" x-init="init()">
                     <button @click="open = !open" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-surface-600 hover:bg-surface-100 transition-colors">
                         <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -51,7 +51,7 @@
                     </button>
                     <div x-show="open" @click.outside="open = false" x-cloak
                         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                        class="absolute top-14 left-auto mt-1 w-72 bg-white border border-surface-100 rounded-2xl shadow-soft p-4 z-50">
+                        class="absolute top-full left-0 mt-1 w-72 bg-white border border-surface-100 rounded-2xl shadow-soft p-4 z-50">
                         <p class="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-2">Select Location</p>
                         <select x-model="stateId" @change="onStateChange()" class="input text-sm mb-2 w-full">
                             <option value="">All States</option>
@@ -226,6 +226,38 @@
 
             {{-- Mobile search --}}
             <div class="md:hidden pb-3">
+                {{-- Mobile Location --}}
+                <div class="mb-2 relative" x-data="locationPicker()" x-init="init()">
+                    <button @click="open = !open" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-surface-600 bg-surface-50 border border-surface-200 w-full">
+                        <svg class="w-3.5 h-3.5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                        </svg>
+                        <span x-text="selectedLabel" class="truncate"></span>
+                        <svg class="w-3 h-3 text-surface-400 ml-auto flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" x-cloak
+                        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                        class="absolute top-full left-0 right-0 mt-1 bg-white border border-surface-100 rounded-2xl shadow-soft p-4 z-50">
+                        <p class="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-2">Select Location</p>
+                        <select x-model="stateId" @change="onStateChange()" class="input text-sm mb-2 w-full">
+                            <option value="">All States</option>
+                            @foreach(\App\Models\State::orderBy('state_name')->get() as $st)
+                            <option value="{{ $st->id }}">{{ $st->state_name }}</option>
+                            @endforeach
+                        </select>
+                        <select x-model="districtId" class="input text-sm mb-3 w-full">
+                            <option value="">All Districts</option>
+                            <template x-for="d in districts" :key="d.id">
+                                <option :value="d.id" x-text="d.district_name"></option>
+                            </template>
+                        </select>
+                        <button @click="applyLocation()" class="btn-primary w-full text-sm py-2">Apply</button>
+                    </div>
+                </div>
+
                 <form action="{{ route('search') }}" method="GET" class="flex gap-2">
                     <input name="q" value="{{ request('q') }}" placeholder="Search products, services…"
                         class="input flex-1">
@@ -428,7 +460,9 @@
                     this.currentIntent = intent;
                     this.loading = true;
                     this.suggestions = [];
-                    this.track('intent_selected', { intent });
+                    this.track('intent_selected', {
+                        intent
+                    });
 
                     fetch('/api/chatbot/suggestions', {
                             method: 'POST',
@@ -437,7 +471,9 @@
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                                 'Accept': 'application/json'
                             },
-                            body: JSON.stringify({ intent })
+                            body: JSON.stringify({
+                                intent
+                            })
                         })
                         .then(r => r.json())
                         .then(data => {

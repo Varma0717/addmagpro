@@ -157,34 +157,43 @@ class ProductDetail {
     required this.name,
     required this.slug,
     required this.description,
+    required this.shortDescription,
     required this.price,
     required this.effectivePrice,
     required this.discountPercent,
     required this.images,
     required this.ratingAvg,
     required this.stock,
+    required this.category,
+    required this.reviews,
   });
 
   final int id;
   final String name;
   final String slug;
   final String? description;
+  final String? shortDescription;
   final double price;
   final double effectivePrice;
   final double discountPercent;
   final List<String> images;
   final double? ratingAvg;
   final int stock;
+  final String? category;
+  final List<ProductReview> reviews;
 
   factory ProductDetail.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
     final images = data['images'];
+    final reviews = data['reviews'];
+    final category = data['category'];
 
     return ProductDetail(
       id: _toInt(data['id']) ?? 0,
       name: (data['name'] as String?) ?? '-',
       slug: (data['slug'] as String?) ?? '',
       description: data['description'] as String?,
+      shortDescription: data['short_description'] as String?,
       price: _toDouble(data['price']) ??
           _toDouble(data['original_price']) ??
           _toDouble(data['mrp']) ??
@@ -203,6 +212,40 @@ class ProductDetail {
           : <String>[],
       ratingAvg: _toDouble(data['rating_avg']),
       stock: _toInt(data['stock']) ?? 0,
+      category: category is Map<String, dynamic> ? category['name'] as String? : null,
+      reviews: reviews is List
+          ? reviews
+              .whereType<Map<String, dynamic>>()
+              .map(ProductReview.fromJson)
+              .toList(growable: false)
+          : <ProductReview>[],
+    );
+  }
+}
+
+class ProductReview {
+  ProductReview({
+    required this.id,
+    required this.rating,
+    required this.comment,
+    required this.userName,
+    required this.createdAt,
+  });
+
+  final int id;
+  final int rating;
+  final String? comment;
+  final String? userName;
+  final String? createdAt;
+
+  factory ProductReview.fromJson(Map<String, dynamic> json) {
+    final user = json['user'];
+    return ProductReview(
+      id: _toInt(json['id']) ?? 0,
+      rating: _toInt(json['rating']) ?? 0,
+      comment: json['comment'] as String?,
+      userName: user is Map<String, dynamic> ? user['name'] as String? : null,
+      createdAt: json['created_at']?.toString(),
     );
   }
 }

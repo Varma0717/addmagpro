@@ -31,19 +31,23 @@ class ChatbotController extends Controller
         $provider = $aiResult['provider'] ?? 'rules';
         $fallbackUsed = $provider !== 'ai';
 
-        ChatbotInteraction::create([
-            'user_id' => $request->user()?->id,
-            'session_id' => $request->hasSession() ? $request->session()->getId() : $request->cookie('laravel_session'),
-            'event_type' => 'suggestion_request',
-            'intent' => $intent,
-            'query' => $payload['query'] ?? null,
-            'provider' => $provider,
-            'fallback_used' => $fallbackUsed,
-            'response_count' => count($suggestions),
-            'meta' => ['city' => $payload['city'] ?? null],
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
+        try {
+            ChatbotInteraction::create([
+                'user_id' => $request->user()?->id,
+                'session_id' => $request->hasSession() ? $request->session()->getId() : $request->cookie('laravel_session'),
+                'event_type' => 'suggestion_request',
+                'intent' => $intent,
+                'query' => $payload['query'] ?? null,
+                'provider' => $provider,
+                'fallback_used' => $fallbackUsed,
+                'response_count' => count($suggestions),
+                'meta' => ['city' => $payload['city'] ?? null],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        } catch (Throwable) {
+            // Table may not exist yet — don't break the response.
+        }
 
         return response()->json([
             'intent' => $intent,
@@ -62,19 +66,23 @@ class ChatbotController extends Controller
             'meta' => ['nullable', 'array'],
         ]);
 
-        ChatbotInteraction::create([
-            'user_id' => $request->user()?->id,
-            'session_id' => $request->hasSession() ? $request->session()->getId() : $request->cookie('laravel_session'),
-            'event_type' => $payload['event_type'],
-            'intent' => $payload['intent'] ?? null,
-            'query' => $payload['query'] ?? null,
-            'provider' => 'client',
-            'fallback_used' => false,
-            'response_count' => 0,
-            'meta' => $payload['meta'] ?? null,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
+        try {
+            ChatbotInteraction::create([
+                'user_id' => $request->user()?->id,
+                'session_id' => $request->hasSession() ? $request->session()->getId() : $request->cookie('laravel_session'),
+                'event_type' => $payload['event_type'],
+                'intent' => $payload['intent'] ?? null,
+                'query' => $payload['query'] ?? null,
+                'provider' => 'client',
+                'fallback_used' => false,
+                'response_count' => 0,
+                'meta' => $payload['meta'] ?? null,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        } catch (Throwable) {
+            // Table may not exist yet.
+        }
 
         return response()->json(['ok' => true]);
     }
@@ -86,13 +94,13 @@ class ChatbotController extends Controller
                 ->approved()
                 ->with('category:id,name')
                 ->select(['id', 'business_name', 'slug', 'city', 'phone', 'category_id'])
-                ->when($payload['city'] ?? null, fn ($q, $city) => $q->where('city', 'like', '%' . $city . '%'))
+                ->when($payload['city'] ?? null, fn($q, $city) => $q->where('city', 'like', '%' . $city . '%'))
                 ->orderByDesc('is_featured')
                 ->latest()
                 ->limit(5)
                 ->get();
 
-            return $query->map(fn (ServiceListing $listing): array => [
+            return $query->map(fn(ServiceListing $listing): array => [
                 'type' => 'service',
                 'title' => $listing->business_name,
                 'subtitle' => trim(($listing->category?->name ?? 'Service') . ($listing->city ? ' • ' . $listing->city : '')),
@@ -110,7 +118,7 @@ class ChatbotController extends Controller
             ->limit(4)
             ->get();
 
-        $productSuggestions = $products->map(fn (Product $product): array => [
+        $productSuggestions = $products->map(fn(Product $product): array => [
             'type' => 'product',
             'title' => $product->name,
             'subtitle' => 'Now ₹' . number_format((float) $product->discount_price, 2) . ' (MRP ₹' . number_format((float) $product->price, 2) . ')',
@@ -126,7 +134,7 @@ class ChatbotController extends Controller
             ->latest()
             ->limit(2)
             ->get(['code', 'name', 'type', 'value'])
-            ->map(fn (Coupon $coupon): array => [
+            ->map(fn(Coupon $coupon): array => [
                 'type' => 'offer',
                 'title' => $coupon->name,
                 'subtitle' => 'Code ' . $coupon->code . ' • ' . ($coupon->type === 'percentage' ? rtrim(rtrim((string) $coupon->value, '0'), '.') . '% off' : '₹' . number_format((float) $coupon->value, 2) . ' off'),
