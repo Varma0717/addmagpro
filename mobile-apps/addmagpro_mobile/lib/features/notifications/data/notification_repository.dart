@@ -20,4 +20,16 @@ class NotificationRepository {
   Future<void> markRead(String token, int notificationId) async {
     await _apiClient.patch('/account/notifications/$notificationId/read', bearerToken: token);
   }
+
+  Future<int> unreadCount(String token) async {
+    final payload = await _apiClient.get('/account/notifications/unread-count', bearerToken: token);
+    final data = payload['data'];
+    if (data is! Map<String, dynamic>) {
+      throw ApiException('Invalid unread notifications response');
+    }
+
+    final count = data['unread_count'];
+    if (count is num) return count.toInt();
+    return int.tryParse(count?.toString() ?? '') ?? 0;
+  }
 }
