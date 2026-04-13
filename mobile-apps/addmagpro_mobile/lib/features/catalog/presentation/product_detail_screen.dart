@@ -8,6 +8,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../cart/data/cart_repository.dart';
+import '../../wishlist/data/wishlist_repository.dart';
 import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
 import '../../wishlist/data/wishlist_repository.dart';
@@ -30,7 +31,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _loading = true;
   bool _addingToCart = false;
   bool _wishlistBusy = false;
-  bool _isWishlisted = false;
+  bool _wishlisted = false;
   String? _error;
   ProductDetail? _product;
   int _quantity = 1;
@@ -62,15 +63,29 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         );
       }
       if (!mounted) return;
-      setState(() {
-        _product = data;
-        _isWishlisted = wishlisted;
-      });
+      setState(() => _product = data);
+      await _initializeWishlistState(data.id);
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = error.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _initializeWishlistState(int productId) async {
+    final token = widget.token;
+    if (token == null) {
+      if (!mounted) return;
+      setState(() => _wishlisted = false);
+      return;
+    }
+    try {
+      final inWishlist = await _wishlistRepository.check(token: token, productId: productId);
+      if (!mounted) return;
+      setState(() => _wishlisted = inWishlist);
+    } catch (_) {
+      // Keep the default state on check failure.
     }
   }
 
@@ -99,6 +114,63 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
+  Future<void> _loadWishlistState(int productId) async {
+    final token = widget.token;
+    if (token == null) {
+      if (!mounted) return;
+      setState(() => _wishlistSelected = false);
+      return;
+    }
+    try {
+      final inWishlist = await _wishlistRepository.check(token: token, productId: productId);
+      if (!mounted) return;
+      setState(() => _wishlistSelected = inWishlist);
+    } catch (_) {
+      // Keep silent; user can still use toggle with explicit feedback.
+    }
+  }
+
+  Future<void> _toggleWishlist() async {
+    final token = widget.token;
+    final product = _product;
+    if (product == null) return;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login required'), behavior: SnackBarBehavior.floating),
+      );
+      return;
+    }
+    if (_wishlistLoading) return;
+
+    final previous = _wishlistSelected;
+    setState(() {
+      _wishlistLoading = true;
+      _wishlistSelected = !previous;
+    });
+
+    try {
+      final added = await _wishlistRepository.toggle(token: token, productId: product.id);
+      if (!mounted) return;
+      setState(() => _wishlistSelected = added);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            added ? '${product.name} added to wishlist' : '${product.name} removed from wishlist',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _wishlistSelected = previous);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString()), behavior: SnackBarBehavior.floating),
+      );
+    } finally {
+      if (mounted) setState(() => _wishlistLoading = false);
+    }
+  }
+
   void _share() {
     final product = _product;
     if (product == null) return;
@@ -108,47 +180,36 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Future<void> _toggleWishlist() async {
     final token = widget.token;
     final product = _product;
-    if (token == null || product == null || _wishlistBusy) {
-      if (token == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login required')),
-        );
-      }
+    if (product == null || _wishlistBusy) return;
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login required to manage wishlist'), behavior: SnackBarBehavior.floating),
+      );
       return;
     }
 
-    final previous = _isWishlisted;
-    final next = !previous;
+    final previous = _wishlisted;
+    final optimistic = !previous;
     setState(() {
-      _isWishlisted = next;
       _wishlistBusy = true;
+      _wishlisted = optimistic;
     });
 
     try {
-      final added = await _wishlistRepository.toggle(
-        token: token,
-        productId: product.id,
-      );
+      final inWishlist = await _wishlistRepository.toggle(token: token, productId: product.id);
       if (!mounted) return;
-      setState(() => _isWishlisted = added);
+      setState(() => _wishlisted = inWishlist);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            added
-                ? '${product.name} added to wishlist'
-                : '${product.name} removed from wishlist',
-          ),
+          content: Text(inWishlist ? '${product.name} added to wishlist' : '${product.name} removed from wishlist'),
           behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (error) {
       if (!mounted) return;
-      setState(() => _isWishlisted = previous);
+      setState(() => _wishlisted = previous);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Wishlist update failed: $error'),
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text(error.toString()), behavior: SnackBarBehavior.floating),
       );
     } finally {
       if (mounted) setState(() => _wishlistBusy = false);
@@ -165,19 +226,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         actions: [
           if (product != null)
             IconButton(
-              onPressed: _toggleWishlist,
-              icon: _wishlistBusy
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(
-                      _isWishlisted
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      color: _isWishlisted ? AppColors.error : null,
-                    ),
+              onPressed: _wishlistBusy ? null : _toggleWishlist,
+              icon: Icon(_wishlisted ? Icons.favorite_rounded : Icons.favorite_border_rounded),
+              color: _wishlisted ? AppColors.error : null,
             ),
           if (product != null) IconButton(onPressed: _share, icon: const Icon(Icons.share_rounded)),
         ],
