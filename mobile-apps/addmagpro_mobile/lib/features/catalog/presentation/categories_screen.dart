@@ -7,6 +7,7 @@ import '../../home/data/home_repository.dart';
 import '../../home/models/home_feed_models.dart';
 import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
+import 'product_filters_sheet.dart';
 import 'product_detail_screen.dart';
 
 class CategoriesScreen extends StatefulWidget {
@@ -32,6 +33,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   int _page = 1;
   int _lastPage = 1;
   bool _loadingMore = false;
+  final Map<int, ProductFilterQuery> _filtersByCategoryIndex = <int, ProductFilterQuery>{};
 
   @override
   void initState() {
@@ -81,9 +83,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     try {
       final category = _categories[_selectedIndex];
       if (category.type == 'ecommerce') {
+        final filters = _filtersByCategoryIndex[_selectedIndex] ?? const ProductFilterQuery();
         final response = await _catalogRepository.fetchProducts(
           page: _page,
           categorySlug: category.slug,
+          filters: filters,
         );
         if (!mounted) return;
         setState(() {
@@ -116,6 +120,37 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   void _onCategoryTap(int index) {
     if (_selectedIndex == index) return;
     setState(() => _selectedIndex = index);
+    _loadProducts(reset: true);
+  }
+
+  ProductFilterQuery get _activeFilters => _filtersByCategoryIndex[_selectedIndex] ?? const ProductFilterQuery();
+
+  List<BrandOption> _brandOptions() {
+    final mapped = <int, String>{};
+    for (final item in _products) {
+      if (item.brandId != null && item.brandName != null && item.brandName!.trim().isNotEmpty) {
+        mapped[item.brandId!] = item.brandName!.trim();
+      }
+    }
+    return mapped.entries.map((entry) => BrandOption(id: entry.key, name: entry.value)).toList(growable: false)
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  }
+
+  Future<void> _openFilters() async {
+    final current = _activeFilters;
+    final next = await showProductFiltersSheet(
+      context,
+      initialFilters: current,
+      brandOptions: _brandOptions(),
+    );
+    if (next == null) return;
+    final isUnchanged = next.minPrice == current.minPrice &&
+        next.maxPrice == current.maxPrice &&
+        next.minRating == current.minRating &&
+        next.brandId == current.brandId &&
+        next.sort == current.sort;
+    if (isUnchanged) return;
+    setState(() => _filtersByCategoryIndex[_selectedIndex] = next);
     _loadProducts(reset: true);
   }
 
@@ -223,60 +258,87 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         const VerticalDivider(width: 1, thickness: 1, color: AppColors.borderLight),
         // Right side — product grid
         Expanded(
-          child: _loadingProducts
-              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-              : _products.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
-                          const SizedBox(height: 8),
-                          Text(
-                            'No products in ${_categories[_selectedIndex].name}',
-                            style: const TextStyle(color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    )
-                  : NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 200) {
-                          _loadMore();
-                        }
-                        return false;
-                      },
-                      child: GridView.builder(
-                        padding: const EdgeInsets.all(10),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.68,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                        ),
-                        itemCount: _products.length + (_loadingMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= _products.length) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-
-                          final product = _products[index];
-                          return _ProductGridCard(
-                            product: product,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => ProductDetailScreen(
-                                    slug: product.slug,
-                                    token: widget.token,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _categories[_selectedIndex].name,
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                       ),
                     ),
+                    IconButton(
+                      tooltip: 'Filter & Sort',
+                      onPressed: _openFilters,
+                      icon: Badge(
+                        isLabelVisible: _activeFilters.hasActiveFilters,
+                        child: const Icon(Icons.filter_alt_outlined),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _loadingProducts
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : _products.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'No products in ${_categories[_selectedIndex].name}',
+                                  style: const TextStyle(color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          )
+                        : NotificationListener<ScrollNotification>(
+                            onNotification: (notification) {
+                              if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 200) {
+                                _loadMore();
+                              }
+                              return false;
+                            },
+                            child: GridView.builder(
+                              padding: const EdgeInsets.all(10),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.68,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                              ),
+                              itemCount: _products.length + (_loadingMore ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index >= _products.length) {
+                                  return const Center(child: CircularProgressIndicator());
+                                }
+
+                                final product = _products[index];
+                                return _ProductGridCard(
+                                  product: product,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => ProductDetailScreen(
+                                          slug: product.slug,
+                                          token: widget.token,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+              ),
+            ],
+          ),
         ),
       ],
     );

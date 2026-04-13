@@ -5,6 +5,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
+import 'product_filters_sheet.dart';
 import 'product_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
@@ -27,6 +28,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final List<ProductListItem> _items = [];
   bool _loadingMore = false;
   bool _gridView = true;
+  ProductFilterQuery _filters = const ProductFilterQuery();
 
   @override
   void initState() {
@@ -40,7 +42,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
       setState(() { _loading = true; _error = null; _page = 1; _lastPage = 1; _items.clear(); });
     }
     try {
-      final response = await _repository.fetchProducts(page: _page, categorySlug: widget.categorySlug);
+      final response = await _repository.fetchProducts(
+        page: _page,
+        categorySlug: widget.categorySlug,
+        filters: _filters,
+      );
       if (!mounted) return;
       setState(() { _items.addAll(response.items); _lastPage = response.lastPage; });
     } catch (error) {
@@ -57,12 +63,47 @@ class _ProductListScreenState extends State<ProductListScreen> {
     await _load(reset: false);
   }
 
+  List<BrandOption> _brandOptions() {
+    final mapped = <int, String>{};
+    for (final item in _items) {
+      if (item.brandId != null && item.brandName != null && item.brandName!.trim().isNotEmpty) {
+        mapped[item.brandId!] = item.brandName!.trim();
+      }
+    }
+    return mapped.entries.map((entry) => BrandOption(id: entry.key, name: entry.value)).toList(growable: false)
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  }
+
+  Future<void> _openFilters() async {
+    final nextFilters = await showProductFiltersSheet(
+      context,
+      initialFilters: _filters,
+      brandOptions: _brandOptions(),
+    );
+    if (nextFilters == null) return;
+    final isUnchanged = nextFilters.minPrice == _filters.minPrice &&
+        nextFilters.maxPrice == _filters.maxPrice &&
+        nextFilters.minRating == _filters.minRating &&
+        nextFilters.brandId == _filters.brandId &&
+        nextFilters.sort == _filters.sort;
+    if (isUnchanged) return;
+    setState(() => _filters = nextFilters);
+    _load(reset: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
+          IconButton(
+            onPressed: _openFilters,
+            icon: Badge(
+              isLabelVisible: _filters.hasActiveFilters,
+              child: const Icon(Icons.filter_alt_outlined),
+            ),
+          ),
           IconButton(
             onPressed: () => setState(() => _gridView = !_gridView),
             icon: Icon(_gridView ? Icons.view_list_rounded : Icons.grid_view_rounded),
