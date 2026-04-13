@@ -3,39 +3,42 @@
 namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
-use App\Models\Coupon;
-use Illuminate\Http\Request;
+use App\Models\UserCoupon;
 
 class CouponController extends Controller
 {
     public function index()
     {
-        $coupons = auth()->user()
-            ->coupons()
-            ->orderByDesc('user_coupons.created_at')
-            ->paginate(20);
+        $userCoupons = UserCoupon::query()
+            ->where('user_id', auth()->id())
+            ->with('coupon')
+            ->latest()
+            ->get()
+            ->filter(fn (UserCoupon $userCoupon) => $userCoupon->coupon !== null);
 
-        return view('account.coupons.index', compact('coupons'));
-    }
+        $availableCoupons = $userCoupons
+            ->filter(function (UserCoupon $userCoupon) {
+                $coupon = $userCoupon->coupon;
 
-    public function store(Request $request)
-    {
-        $user = $request->user();
-
-        $coupon = Coupon::query()
-            ->where('is_active', true)
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                return $userCoupon->used_at === null
+                    && $coupon->is_active
+                    && (!$coupon->expires_at || !$coupon->expires_at->isPast());
             })
-            ->inRandomOrder()
-            ->first();
+            ->values();
 
-        if (!$coupon) {
-            return back()->with('error', 'No active coupons available right now.');
-        }
+        $usedCoupons = $userCoupons
+            ->filter(fn (UserCoupon $userCoupon) => $userCoupon->used_at !== null)
+            ->values();
 
-        $user->coupons()->syncWithoutDetaching([$coupon->id]);
+        $expiredCoupons = $userCoupons
+            ->filter(function (UserCoupon $userCoupon) {
+                $coupon = $userCoupon->coupon;
 
-        return back()->with('success', 'Coupon generated successfully.');
+                return $userCoupon->used_at === null
+                    && (!$coupon->is_active || ($coupon->expires_at && $coupon->expires_at->isPast()));
+            })
+            ->values();
+
+        return view('account.coupons', compact('availableCoupons', 'usedCoupons', 'expiredCoupons'));
     }
 }

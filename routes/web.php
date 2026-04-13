@@ -81,6 +81,9 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
     Route::get('/referrals', [Account\ReferralController::class, 'index'])->name('referrals.index');
     Route::get('/notifications', [Account\NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/count', [Account\NotificationController::class, 'unreadCount'])->name('notifications.count');
+    Route::get('/coupons', [Account\CouponController::class, 'index'])->name('coupons.list');
+    Route::get('/settings', [Account\SettingsController::class, 'edit'])->name('settings.edit');
+    Route::post('/settings', [Account\SettingsController::class, 'update'])->name('settings.update');
 });
 
 // Dashboard redirect (Breeze default)

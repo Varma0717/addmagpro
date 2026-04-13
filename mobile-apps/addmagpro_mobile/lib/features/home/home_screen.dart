@@ -16,8 +16,10 @@ import '../catalog/presentation/listing_list_screen.dart';
 import '../catalog/presentation/product_detail_screen.dart';
 import '../catalog/presentation/product_list_screen.dart';
 import '../cart/presentation/cart_screen.dart';
+import '../notifications/data/notification_repository.dart';
 import '../wishlist/presentation/wishlist_screen.dart';
 import 'data/home_repository.dart';
+import 'data/location_repository.dart';
 import 'models/home_feed_models.dart';
 import '../notifications/presentation/notifications_screen.dart';
 import '../search/presentation/search_screen.dart';
@@ -33,6 +35,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  int? _selectedStateId;
+  int? _selectedDistrictId;
+  String? _selectedLocationLabel;
+  bool _locationBusy = false;
+  final HomeRepository _repository = HomeRepository(apiClient: ApiClient());
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +47,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (token == null) return const SizedBox.shrink();
 
     final pages = <Widget>[
-      _DashboardView(appState: widget.appState, token: token),
+      _DashboardView(
+        appState: widget.appState,
+        token: token,
+        stateId: _selectedStateId,
+        districtId: _selectedDistrictId,
+      ),
       CategoriesScreen(token: token),
       CartScreen(token: token, appState: widget.appState),
       WishlistScreen(token: token),
@@ -62,12 +74,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 18),
                   ),
                   const SizedBox(width: 10),
-                  const Text('AddMagPro'),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Flexible(
+                          child: Text('AddMagPro', overflow: TextOverflow.ellipsis),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(child: _buildLocationChip(context)),
+                      ],
+                    ),
+                  ),
                 ],
               ),
               actions: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: _buildWalletChip(context),
+                ),
                 IconButton(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SearchScreen(token: token))),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SearchScreen(appState: widget.appState, token: token))),
                   icon: const Icon(Icons.search_rounded),
                 ),
                 IconButton(
@@ -106,14 +132,106 @@ class _HomeScreenState extends State<HomeScreen> {
       default: return 'AddMagPro';
     }
   }
+
+  Widget _buildLocationChip(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final compact = width < 380;
+    final label = _selectedLocationLabel ?? 'All India';
+    return ActionChip(
+      avatar: Icon(Icons.location_on_outlined, size: compact ? 14 : 16, color: AppColors.primary),
+      label: Text(
+        compact ? _compactLocationLabel(label) : label,
+        overflow: TextOverflow.ellipsis,
+      ),
+      labelStyle: TextStyle(
+        fontSize: compact ? 11 : 12,
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.w600,
+      ),
+      onPressed: _locationBusy ? null : _openLocationSheet,
+      padding: EdgeInsets.symmetric(horizontal: compact ? 6 : 8, vertical: compact ? 0 : 2),
+      side: BorderSide(color: AppColors.primary.withAlpha(40)),
+      backgroundColor: AppColors.primaryLight,
+    );
+  }
+
+  Widget _buildWalletChip(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final compact = width < 380;
+    final wallet = widget.appState.currentUser?.walletBalance;
+    final walletLabel = wallet == null ? 'Wallet --' : '₹${wallet.toStringAsFixed(2)}';
+
+    return Container(
+      margin: const EdgeInsets.only(right: 4),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: compact ? 6 : 7),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withAlpha(40)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.account_balance_wallet_outlined, size: 15, color: AppColors.primary),
+          if (!compact) ...[
+            const SizedBox(width: 4),
+            Text(walletLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _compactLocationLabel(String label) {
+    final parts = label.split(',');
+    return parts.first.trim();
+  }
+
+  Future<void> _openLocationSheet() async {
+    setState(() => _locationBusy = true);
+    try {
+      final states = await _repository.fetchStates();
+      if (!mounted) return;
+      final result = await showModalBottomSheet<_LocationSelection>(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => _LocationPickerSheet(
+          repository: _repository,
+          states: states,
+          initialStateId: _selectedStateId,
+          initialDistrictId: _selectedDistrictId,
+        ),
+      );
+      if (result == null || !mounted) return;
+      setState(() {
+        _selectedStateId = result.stateId;
+        _selectedDistrictId = result.districtId;
+        _selectedLocationLabel = result.label;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Location options unavailable right now. Showing all locations.')),
+      );
+    } finally {
+      if (mounted) setState(() => _locationBusy = false);
+    }
+  }
 }
 
 // ── Dashboard View ──────────────────────────────────────────────────
 
 class _DashboardView extends StatefulWidget {
-  const _DashboardView({required this.appState, required this.token});
+  const _DashboardView({
+    required this.appState,
+    required this.token,
+    this.stateId,
+    this.districtId,
+  });
   final AppState appState;
   final String token;
+  final int? stateId;
+  final int? districtId;
 
   @override
   State<_DashboardView> createState() => _DashboardViewState();
@@ -135,6 +253,14 @@ class _DashboardViewState extends State<_DashboardView> {
   }
 
   @override
+  void didUpdateWidget(covariant _DashboardView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.stateId != widget.stateId || oldWidget.districtId != widget.districtId) {
+      _load();
+    }
+  }
+
+  @override
   void dispose() {
     _bannerTimer?.cancel();
     _bannerController.dispose();
@@ -144,7 +270,10 @@ class _DashboardViewState extends State<_DashboardView> {
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final response = await _repository.fetch();
+      final response = await _repository.fetch(
+        stateId: widget.stateId,
+        districtId: widget.districtId,
+      );
       if (!mounted) return;
       setState(() => _feed = response);
       _startBannerAutoScroll();
@@ -195,6 +324,14 @@ class _DashboardViewState extends State<_DashboardView> {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: _LocationSelector(
+              appState: widget.appState,
+              onLocationChanged: _load,
+            ),
+          ),
+
           // ── Banner Carousel ──
           if (feed.banners.isNotEmpty) ...[
             SizedBox(
@@ -314,7 +451,7 @@ class _DashboardViewState extends State<_DashboardView> {
                 itemBuilder: (_, index) {
                   final cat = feed.categories[index];
                   return GestureDetector(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(categorySlug: cat.slug, title: cat.name, token: widget.token))),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(appState: widget.appState, categorySlug: cat.slug, title: cat.name, token: widget.token))),
                     child: SizedBox(
                       width: 76,
                       child: Column(
@@ -348,7 +485,7 @@ class _DashboardViewState extends State<_DashboardView> {
             SectionHeader(
               title: 'Featured Products',
               actionLabel: 'View All',
-              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(title: 'Featured Products', token: widget.token))),
+              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(appState: widget.appState, title: 'Featured Products', token: widget.token))),
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
             const SizedBox(height: 14),
@@ -393,7 +530,7 @@ class _DashboardViewState extends State<_DashboardView> {
             SectionHeader(
               title: 'Local Services',
               actionLabel: 'View All',
-              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ListingListScreen(title: 'Nearby Services'))),
+              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ListingListScreen(appState: widget.appState, title: 'Nearby Services'))),
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
             const SizedBox(height: 12),
@@ -443,6 +580,167 @@ class _DashboardViewState extends State<_DashboardView> {
           const SizedBox(height: 14),
           Row(children: List.generate(2, (_) => Expanded(child: Container(height: 200, margin: const EdgeInsets.only(right: 12), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)))))),
         ],
+      ),
+    );
+  }
+}
+
+class _LocationSelection {
+  const _LocationSelection({
+    required this.stateId,
+    required this.districtId,
+    required this.label,
+  });
+
+  final int? stateId;
+  final int? districtId;
+  final String label;
+}
+
+class _LocationPickerSheet extends StatefulWidget {
+  const _LocationPickerSheet({
+    required this.repository,
+    required this.states,
+    required this.initialStateId,
+    required this.initialDistrictId,
+  });
+
+  final HomeRepository repository;
+  final List<LocationStateOption> states;
+  final int? initialStateId;
+  final int? initialDistrictId;
+
+  @override
+  State<_LocationPickerSheet> createState() => _LocationPickerSheetState();
+}
+
+class _LocationPickerSheetState extends State<_LocationPickerSheet> {
+  int? _stateId;
+  int? _districtId;
+  bool _loadingDistricts = false;
+  List<LocationDistrictOption> _districts = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _stateId = widget.initialStateId;
+    _districtId = widget.initialDistrictId;
+    if (_stateId != null) {
+      _loadDistricts(_stateId!, keepDistrict: true);
+    }
+  }
+
+  Future<void> _loadDistricts(int stateId, {bool keepDistrict = false}) async {
+    setState(() => _loadingDistricts = true);
+    try {
+      final items = await widget.repository.fetchDistricts(stateId);
+      if (!mounted) return;
+      setState(() {
+        _districts = items;
+        if (!keepDistrict || !_districts.any((d) => d.id == _districtId)) {
+          _districtId = null;
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _districts = const []);
+    } finally {
+      if (mounted) setState(() => _loadingDistricts = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Choose location', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<int>(
+              value: _stateId ?? 0,
+              decoration: const InputDecoration(
+                labelText: 'State',
+                prefixIcon: Icon(Icons.map_outlined),
+              ),
+              items: [
+                const DropdownMenuItem<int>(value: 0, child: Text('All India')),
+                ...widget.states.map(
+                  (state) => DropdownMenuItem<int>(value: state.id, child: Text(state.name)),
+                ),
+              ],
+              onChanged: (value) {
+                final stateValue = value == null || value == 0 ? null : value;
+                setState(() {
+                  _stateId = stateValue;
+                  _districtId = null;
+                  _districts = const [];
+                });
+                if (stateValue != null) {
+                  _loadDistricts(stateValue);
+                }
+              },
+            ),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<int>(
+              value: _districtId ?? 0,
+              decoration: InputDecoration(
+                labelText: 'District',
+                prefixIcon: const Icon(Icons.location_city_outlined),
+                helperText: _stateId == null ? 'Select a state first' : null,
+              ),
+              items: [
+                const DropdownMenuItem<int>(value: 0, child: Text('All districts')),
+                ..._districts.map(
+                  (district) => DropdownMenuItem<int>(value: district.id, child: Text(district.name)),
+                ),
+              ],
+              onChanged: _stateId == null || _loadingDistricts
+                  ? null
+                  : (value) => setState(() => _districtId = value == null || value == 0 ? null : value),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(const _LocationSelection(stateId: null, districtId: null, label: 'All India')),
+                  child: const Text('Clear'),
+                ),
+                const Spacer(),
+                FilledButton(
+                  onPressed: () {
+                    String? stateName;
+                    for (final state in widget.states) {
+                      if (state.id == _stateId) {
+                        stateName = state.name;
+                        break;
+                      }
+                    }
+                    String? districtName;
+                    for (final district in _districts) {
+                      if (district.id == _districtId) {
+                        districtName = district.name;
+                        break;
+                      }
+                    }
+                    final label = districtName != null
+                        ? '$districtName, ${stateName ?? ''}'.trim().replaceAll(RegExp(r',\s*$'), '')
+                        : (stateName ?? 'All India');
+                    Navigator.of(context).pop(
+                      _LocationSelection(stateId: _stateId, districtId: _districtId, label: label),
+                    );
+                  },
+                  child: const Text('Apply'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -517,7 +815,9 @@ class _ServiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ListingDetailScreen(slug: listing.slug))),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => ListingDetailScreen(slug: listing.slug)),
+      ),
       child: Container(
         margin: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
         padding: const EdgeInsets.all(14),

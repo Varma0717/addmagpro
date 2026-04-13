@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChatbotInteraction;
 use App\Models\Order;
 use App\Models\Referral;
 use App\Models\User;
@@ -21,9 +22,18 @@ class DashboardController extends Controller
             'wallet_issued'  => WalletTransaction::where('type', 'credit')->sum('amount'),
         ];
 
+        $chatbotStats = [
+            'requests' => ChatbotInteraction::where('event_type', 'suggestion_request')->count(),
+            'fallback_rate' => ChatbotInteraction::where('event_type', 'suggestion_request')->count() > 0
+                ? round(ChatbotInteraction::where('event_type', 'suggestion_request')->where('fallback_used', true)->count() * 100 / ChatbotInteraction::where('event_type', 'suggestion_request')->count(), 1)
+                : 0,
+            'opens' => ChatbotInteraction::where('event_type', 'widget_opened')->count(),
+        ];
+
         $recent_orders = Order::with('user')->latest()->take(10)->get();
         $recent_users  = User::where('role', 'user')->latest()->take(10)->get();
+        $recent_chatbot_interactions = ChatbotInteraction::latest()->take(12)->get();
 
-        return view('admin.dashboard', compact('stats', 'recent_orders', 'recent_users'));
+        return view('admin.dashboard', compact('stats', 'chatbotStats', 'recent_orders', 'recent_users', 'recent_chatbot_interactions'));
     }
 }
