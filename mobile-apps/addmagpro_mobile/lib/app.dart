@@ -10,6 +10,7 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/location/data/location_repository.dart';
 import 'features/notifications/presentation/notifications_screen.dart';
 import 'features/orders/presentation/orders_screen.dart';
 
@@ -36,12 +37,14 @@ class _AddMagProAppState extends State<AddMagProApp> {
     ));
 
     final apiClient = ApiClient();
+    final storage = SecureStorageService();
     final authRepository = AuthRepository(
       apiClient: apiClient,
-      storage: SecureStorageService(),
+      storage: storage,
     );
+    final locationRepository = LocationRepository(apiClient: apiClient);
 
-    _appState = AppState(authRepository);
+    _appState = AppState(authRepository, locationRepository, storage);
     _pushNotificationService = PushNotificationService(apiClient: apiClient);
 
     _appState.addListener(_onAppStateChanged);

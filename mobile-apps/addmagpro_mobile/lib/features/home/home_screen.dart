@@ -93,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: _buildWalletChip(context),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SearchScreen(token: token))),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SearchScreen(appState: widget.appState, token: token))),
                   icon: const Icon(Icons.search_rounded),
                 ),
                 IconButton(
@@ -324,6 +324,14 @@ class _DashboardViewState extends State<_DashboardView> {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: _LocationSelector(
+              appState: widget.appState,
+              onLocationChanged: _load,
+            ),
+          ),
+
           // ── Banner Carousel ──
           if (feed.banners.isNotEmpty) ...[
             SizedBox(
@@ -443,7 +451,7 @@ class _DashboardViewState extends State<_DashboardView> {
                 itemBuilder: (_, index) {
                   final cat = feed.categories[index];
                   return GestureDetector(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(categorySlug: cat.slug, title: cat.name, token: widget.token))),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(appState: widget.appState, categorySlug: cat.slug, title: cat.name, token: widget.token))),
                     child: SizedBox(
                       width: 76,
                       child: Column(
@@ -477,7 +485,7 @@ class _DashboardViewState extends State<_DashboardView> {
             SectionHeader(
               title: 'Featured Products',
               actionLabel: 'View All',
-              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(title: 'Featured Products', token: widget.token))),
+              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ProductListScreen(appState: widget.appState, title: 'Featured Products', token: widget.token))),
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
             const SizedBox(height: 14),
@@ -522,7 +530,7 @@ class _DashboardViewState extends State<_DashboardView> {
             SectionHeader(
               title: 'Local Services',
               actionLabel: 'View All',
-              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ListingListScreen(title: 'Nearby Services'))),
+              onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ListingListScreen(appState: widget.appState, title: 'Nearby Services'))),
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
             const SizedBox(height: 12),
