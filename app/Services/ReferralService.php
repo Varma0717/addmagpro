@@ -8,7 +8,10 @@ use App\Models\User;
 
 class ReferralService
 {
-    public function __construct(private readonly WalletService $walletService) {}
+    public function __construct(
+        private readonly WalletService $walletService,
+        private readonly PushNotificationService $pushNotifications,
+    ) {}
 
     public function handleSignup(User $newUser): void
     {
@@ -29,9 +32,23 @@ class ReferralService
 
         if ($setting->referrer_amount > 0) {
             $this->walletService->credit($referrer, $setting->referrer_amount, 'Referral signup bonus', 'referrals', $referral->id);
+            $this->pushNotifications->notifyUser(
+                $referrer,
+                'Referral reward credited',
+                "You earned ₹{$setting->referrer_amount} for inviting {$newUser->name}.",
+                'reward',
+                ['event' => 'signup_reward', 'referral_id' => (string) $referral->id],
+            );
         }
         if ($setting->referee_amount > 0) {
             $this->walletService->credit($newUser, $setting->referee_amount, 'Welcome bonus', 'referrals', $referral->id);
+            $this->pushNotifications->notifyUser(
+                $newUser,
+                'Welcome reward credited',
+                "You received ₹{$setting->referee_amount} as your referral welcome bonus.",
+                'reward',
+                ['event' => 'welcome_reward', 'referral_id' => (string) $referral->id],
+            );
         }
 
         $referral->update(['signup_reward_given' => true, 'status' => 'active']);
@@ -51,6 +68,13 @@ class ReferralService
         $referrer = User::find($referral->referrer_id);
         if ($referrer && $setting->referrer_amount > 0) {
             $this->walletService->credit($referrer, $setting->referrer_amount, 'Referral purchase bonus', 'referrals', $referral->id);
+            $this->pushNotifications->notifyUser(
+                $referrer,
+                'Purchase reward credited',
+                "You earned ₹{$setting->referrer_amount} because {$buyer->name} completed a purchase.",
+                'reward',
+                ['event' => 'purchase_reward', 'referral_id' => (string) $referral->id],
+            );
         }
 
         $referral->update(['purchase_reward_given' => true]);

@@ -4,11 +4,14 @@ import 'package:flutter/services.dart';
 import 'app_state.dart';
 import 'core/config/app_config.dart';
 import 'core/network/api_client.dart';
+import 'core/notifications/push_notification_service.dart';
 import 'core/storage/secure_storage_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/notifications/presentation/notifications_screen.dart';
+import 'features/orders/presentation/orders_screen.dart';
 
 class AddMagProApp extends StatefulWidget {
   const AddMagProApp({super.key});
@@ -19,6 +22,9 @@ class AddMagProApp extends StatefulWidget {
 
 class _AddMagProAppState extends State<AddMagProApp> {
   late final AppState _appState;
+  late final PushNotificationService _pushNotificationService;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  String? _lastAuthToken;
 
   @override
   void initState() {
@@ -29,13 +35,56 @@ class _AddMagProAppState extends State<AddMagProApp> {
       statusBarIconBrightness: Brightness.dark,
     ));
 
+    final apiClient = ApiClient();
     final authRepository = AuthRepository(
-      apiClient: ApiClient(),
+      apiClient: apiClient,
       storage: SecureStorageService(),
     );
 
     _appState = AppState(authRepository);
+    _pushNotificationService = PushNotificationService(apiClient: apiClient);
+
+    _appState.addListener(_onAppStateChanged);
     _appState.initialize();
+
+    _pushNotificationService.initialize(
+      authTokenProvider: () => _appState.token,
+      onRouteRequested: _handleNotificationRoute,
+    );
+  }
+
+  @override
+  void dispose() {
+    _appState.removeListener(_onAppStateChanged);
+    super.dispose();
+  }
+
+  void _onAppStateChanged() {
+    final token = _appState.token;
+    if (token == null || token.isEmpty || token == _lastAuthToken) {
+      return;
+    }
+
+    _lastAuthToken = token;
+    _pushNotificationService.registerOrUpdateToken(authTokenProvider: () => _appState.token);
+  }
+
+  void _handleNotificationRoute(Map<String, dynamic> data) {
+    final token = _appState.token;
+    if (token == null || token.isEmpty) return;
+
+    final type = (data['type'] ?? '').toString().toLowerCase();
+    final event = (data['event'] ?? '').toString().toLowerCase();
+
+    final navigator = _navigatorKey.currentState;
+    if (navigator == null) return;
+
+    if (type == 'order' || event.startsWith('order_')) {
+      navigator.push(MaterialPageRoute<void>(builder: (_) => OrdersScreen(token: token)));
+      return;
+    }
+
+    navigator.push(MaterialPageRoute<void>(builder: (_) => NotificationsScreen(token: token)));
   }
 
   @override
@@ -47,6 +96,7 @@ class _AddMagProAppState extends State<AddMagProApp> {
           debugShowCheckedModeBanner: false,
           title: AppConfig.appName,
           theme: AppTheme.light,
+          navigatorKey: _navigatorKey,
           home: _rootScreen(),
         );
       },
