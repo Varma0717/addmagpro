@@ -1,15 +1,24 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app_state.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
+import 'product_filters_sheet.dart';
 import 'product_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({super.key, this.categorySlug, this.title = 'Products', this.token});
+  const ProductListScreen({
+    super.key,
+    required this.appState,
+    this.categorySlug,
+    this.title = 'Products',
+    this.token,
+  });
 
+  final AppState appState;
   final String? categorySlug;
   final String title;
   final String? token;
@@ -34,11 +43,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final List<ProductListItem> _items = [];
   bool _loadingMore = false;
   bool _gridView = true;
-  String? _selectedSort;
-  double? _minPrice;
-  double? _maxPrice;
-  double? _minRating;
-  String? _brand;
+  ProductFilterQuery _filters = const ProductFilterQuery();
 
   @override
   void initState() {
@@ -55,11 +60,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
       final response = await _repository.fetchProducts(
         page: _page,
         categorySlug: widget.categorySlug,
-        sort: _selectedSort,
-        minPrice: _minPrice,
-        maxPrice: _maxPrice,
-        minRating: _minRating,
-        brand: _brand,
+        stateId: widget.appState.selectedState?.id,
+        districtId: widget.appState.selectedDistrict?.id,
       );
       if (!mounted) return;
       setState(() { _items.addAll(response.items); _lastPage = response.lastPage; });
@@ -77,143 +79,32 @@ class _ProductListScreenState extends State<ProductListScreen> {
     await _load(reset: false);
   }
 
-  Future<void> _openSortAndFilterSheet() async {
-    final minController = TextEditingController(text: _minPrice?.toStringAsFixed(0) ?? '');
-    final maxController = TextEditingController(text: _maxPrice?.toStringAsFixed(0) ?? '');
-    final ratingController = TextEditingController(text: _minRating?.toStringAsFixed(1) ?? '');
-    final brandController = TextEditingController(text: _brand ?? '');
+  List<BrandOption> _brandOptions() {
+    final mapped = <int, String>{};
+    for (final item in _items) {
+      if (item.brandId != null && item.brandName != null && item.brandName!.trim().isNotEmpty) {
+        mapped[item.brandId!] = item.brandName!.trim();
+      }
+    }
+    return mapped.entries.map((entry) => BrandOption(id: entry.key, name: entry.value)).toList(growable: false)
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  }
 
-    String? draftSort = _selectedSort;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return SafeArea(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Sort & filters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 12),
-                      const Text('Sort', style: TextStyle(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        children: _sortOptions.entries
-                            .map(
-                              (entry) => ChoiceChip(
-                                label: Text(entry.value),
-                                selected: draftSort == entry.key,
-                                onSelected: (_) => setModalState(() => draftSort = entry.key),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: minController,
-                        decoration: const InputDecoration(labelText: 'Min price'),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: maxController,
-                        decoration: const InputDecoration(labelText: 'Max price'),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: ratingController,
-                        decoration: const InputDecoration(labelText: 'Min rating (0-5)'),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: brandController,
-                        decoration: const InputDecoration(labelText: 'Brand'),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              setModalState(() {
-                                draftSort = null;
-                                minController.clear();
-                                maxController.clear();
-                                ratingController.clear();
-                                brandController.clear();
-                              });
-                            },
-                            child: const Text('Clear'),
-                          ),
-                          const Spacer(),
-                          FilledButton(
-                            onPressed: () {
-                              setState(() {
-                                _selectedSort = draftSort;
-                                _minPrice = double.tryParse(minController.text.trim());
-                                _maxPrice = double.tryParse(maxController.text.trim());
-                                _minRating = double.tryParse(ratingController.text.trim());
-                                _brand = brandController.text.trim().isEmpty ? null : brandController.text.trim();
-                              });
-                              Navigator.of(context).pop();
-                              _load(reset: true);
-                            },
-                            child: const Text('Apply'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
+  Future<void> _openFilters() async {
+    final nextFilters = await showProductFiltersSheet(
+      context,
+      initialFilters: _filters,
+      brandOptions: _brandOptions(),
     );
-  }
-
-  void _clearAllFilters() {
-    setState(() {
-      _selectedSort = null;
-      _minPrice = null;
-      _maxPrice = null;
-      _minRating = null;
-      _brand = null;
-    });
+    if (nextFilters == null) return;
+    final isUnchanged = nextFilters.minPrice == _filters.minPrice &&
+        nextFilters.maxPrice == _filters.maxPrice &&
+        nextFilters.minRating == _filters.minRating &&
+        nextFilters.brandId == _filters.brandId &&
+        nextFilters.sort == _filters.sort;
+    if (isUnchanged) return;
+    setState(() => _filters = nextFilters);
     _load(reset: true);
-  }
-
-  List<Widget> _buildActiveFilterChips() {
-    final chips = <Widget>[];
-    if (_selectedSort != null) {
-      chips.add(Chip(label: Text('Sort: ${_sortOptions[_selectedSort] ?? _selectedSort!}')));
-    }
-    if (_minPrice != null) {
-      chips.add(Chip(label: Text('Min ₹${_minPrice!.toStringAsFixed(0)}')));
-    }
-    if (_maxPrice != null) {
-      chips.add(Chip(label: Text('Max ₹${_maxPrice!.toStringAsFixed(0)}')));
-    }
-    if (_minRating != null) {
-      chips.add(Chip(label: Text('Rating ${_minRating!.toStringAsFixed(1)}+')));
-    }
-    if (_brand != null) {
-      chips.add(Chip(label: Text('Brand: $_brand')));
-    }
-    return chips;
   }
 
   @override
@@ -223,9 +114,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
         title: Text(widget.title),
         actions: [
           IconButton(
-            onPressed: _openSortAndFilterSheet,
-            icon: const Icon(Icons.tune_rounded),
-            tooltip: 'Sort & filters',
+            onPressed: _openFilters,
+            icon: Badge(
+              isLabelVisible: _filters.hasActiveFilters,
+              child: const Icon(Icons.filter_alt_outlined),
+            ),
           ),
           IconButton(
             onPressed: () => setState(() => _gridView = !_gridView),

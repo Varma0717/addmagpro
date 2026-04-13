@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app_state.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/catalog_repository.dart';
@@ -8,8 +9,9 @@ import '../models/catalog_models.dart';
 import 'listing_detail_screen.dart';
 
 class ListingListScreen extends StatefulWidget {
-  const ListingListScreen({super.key, this.title = 'Services'});
+  const ListingListScreen({super.key, required this.appState, this.title = 'Services'});
 
+  final AppState appState;
   final String title;
 
   @override
@@ -37,7 +39,11 @@ class _ListingListScreenState extends State<ListingListScreen> {
       setState(() { _loading = true; _error = null; _page = 1; _lastPage = 1; _items.clear(); });
     }
     try {
-      final response = await _repository.fetchListings(page: _page);
+      final response = await _repository.fetchListings(
+        page: _page,
+        stateId: widget.appState.selectedState?.id,
+        districtId: widget.appState.selectedDistrict?.id,
+      );
       if (!mounted) return;
       setState(() { _items.addAll(response.items); _lastPage = response.lastPage; });
     } catch (error) {

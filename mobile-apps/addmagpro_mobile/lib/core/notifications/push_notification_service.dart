@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../network/api_client.dart';
+import 'notification_sync_bus.dart';
 
 typedef AuthTokenProvider = String? Function();
 typedef NotificationRouteHandler = void Function(Map<String, dynamic> data);
@@ -35,15 +36,18 @@ class PushNotificationService {
     await _initLocalNotifications(onRouteRequested);
 
     FirebaseMessaging.onMessage.listen((message) async {
+      NotificationSyncBus.emit(message.data);
       await _showForegroundNotification(message);
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      NotificationSyncBus.emit(message.data);
       onRouteRequested(message.data);
     });
 
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
+      NotificationSyncBus.emit(initialMessage.data);
       onRouteRequested(initialMessage.data);
     }
 
@@ -109,6 +113,7 @@ class PushNotificationService {
         if (payload == null || payload.isEmpty) return;
         final decoded = jsonDecode(payload);
         if (decoded is Map<String, dynamic>) {
+          NotificationSyncBus.emit(decoded);
           onRouteRequested(decoded);
         }
       },
