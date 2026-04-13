@@ -9,6 +9,18 @@ import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
 import 'product_detail_screen.dart';
 
+enum _CatalogSortOption {
+  latest('latest', 'Latest'),
+  priceAsc('price_asc', 'Price: Low to High'),
+  priceDesc('price_desc', 'Price: High to Low'),
+  rating('rating', 'Rating');
+
+  const _CatalogSortOption(this.apiValue, this.label);
+
+  final String apiValue;
+  final String label;
+}
+
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key, this.token});
 
@@ -32,6 +44,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   int _page = 1;
   int _lastPage = 1;
   bool _loadingMore = false;
+  _CatalogSortOption _sortOption = _CatalogSortOption.latest;
+  double? _minPrice;
+  double? _maxPrice;
+  double? _minRating;
+  String _brand = '';
 
   @override
   void initState() {
@@ -84,11 +101,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         final response = await _catalogRepository.fetchProducts(
           page: _page,
           categorySlug: category.slug,
+          sort: _sortOption.apiValue,
+          minPrice: _minPrice,
+          maxPrice: _maxPrice,
+          rating: _minRating,
+          brand: _brand.trim().isEmpty ? null : _brand.trim(),
         );
         if (!mounted) return;
         setState(() {
           _products.addAll(response.items);
           _lastPage = response.lastPage;
+          _availableBrands = response.availableBrands;
         });
       }
     } catch (error) {
@@ -119,6 +142,170 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     _loadProducts(reset: true);
   }
 
+  bool get _hasActiveFilters =>
+      _minPrice != null || _maxPrice != null || _minRating != null || _brand.trim().isNotEmpty;
+
+  Future<void> _openSortSheet() async {
+    final selected = await showModalBottomSheet<_CatalogSortOption>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _CatalogSortOption.values
+                .map(
+                  (option) => RadioListTile<_CatalogSortOption>(
+                    title: Text(option.label),
+                    value: option,
+                    groupValue: _sortOption,
+                    onChanged: (value) => Navigator.of(context).pop(value),
+                  ),
+                )
+                .toList(),
+          ),
+        );
+      },
+    );
+
+    if (selected == null || selected == _sortOption) return;
+    setState(() => _sortOption = selected);
+    _loadProducts(reset: true);
+  }
+
+  Future<void> _openFilterSheet() async {
+    final minPriceController = TextEditingController(
+      text: _minPrice == null ? '' : _minPrice!.toStringAsFixed(0),
+    );
+    final maxPriceController = TextEditingController(
+      text: _maxPrice == null ? '' : _maxPrice!.toStringAsFixed(0),
+    );
+    final brandController = TextEditingController(text: _brand);
+
+    double? draftRating = _minRating;
+    final applied = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 8,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Filter Products', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: minPriceController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'Min Price', prefixText: '₹'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: maxPriceController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'Max Price', prefixText: '₹'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<double?>(
+                      value: draftRating,
+                      decoration: const InputDecoration(labelText: 'Minimum Rating'),
+                      items: const [
+                        DropdownMenuItem<double?>(value: null, child: Text('Any')),
+                        DropdownMenuItem<double?>(value: 4.5, child: Text('4.5+')),
+                        DropdownMenuItem<double?>(value: 4.0, child: Text('4.0+')),
+                        DropdownMenuItem<double?>(value: 3.5, child: Text('3.5+')),
+                        DropdownMenuItem<double?>(value: 3.0, child: Text('3.0+')),
+                      ],
+                      onChanged: (value) => setSheetState(() => draftRating = value),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: brandController,
+                      decoration: const InputDecoration(labelText: 'Brand'),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            minPriceController.clear();
+                            maxPriceController.clear();
+                            brandController.clear();
+                            setSheetState(() => draftRating = null);
+                          },
+                          child: const Text('Reset'),
+                        ),
+                        const Spacer(),
+                        FilledButton(
+                          onPressed: () {
+                            final minPrice = double.tryParse(minPriceController.text.trim());
+                            final maxPrice = double.tryParse(maxPriceController.text.trim());
+                            final brand = brandController.text.trim();
+                            if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Min price cannot be greater than max price')),
+                              );
+                              return;
+                            }
+                            setState(() {
+                              _minPrice = minPrice;
+                              _maxPrice = maxPrice;
+                              _minRating = draftRating;
+                              _brand = brand;
+                            });
+                            Navigator.of(context).pop(true);
+                          },
+                          child: const Text('Apply'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    minPriceController.dispose();
+    maxPriceController.dispose();
+    brandController.dispose();
+
+    if (applied == true) {
+      _loadProducts(reset: true);
+    }
+  }
+
+  void _clearAllFilters() {
+    if (!_hasActiveFilters) return;
+    setState(() {
+      _minPrice = null;
+      _maxPrice = null;
+      _minRating = null;
+      _brand = '';
+    });
+    _loadProducts(reset: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loadingCategories) {
@@ -143,6 +330,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     if (_categories.isEmpty) {
       return const Center(child: Text('No categories found'));
     }
+
+    final activeChips = _buildActiveFilterChips();
 
     return Row(
       children: [
@@ -223,60 +412,107 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         const VerticalDivider(width: 1, thickness: 1, color: AppColors.borderLight),
         // Right side — product grid
         Expanded(
-          child: _loadingProducts
-              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-              : _products.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
-                          const SizedBox(height: 8),
-                          Text(
-                            'No products in ${_categories[_selectedIndex].name}',
-                            style: const TextStyle(color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    )
-                  : NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 200) {
-                          _loadMore();
-                        }
-                        return false;
-                      },
-                      child: GridView.builder(
-                        padding: const EdgeInsets.all(10),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.68,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                        ),
-                        itemCount: _products.length + (_loadingMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= _products.length) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-
-                          final product = _products[index];
-                          return _ProductGridCard(
-                            product: product,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => ProductDetailScreen(
-                                    slug: product.slug,
-                                    token: widget.token,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                child: Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _openFilterSheet,
+                      icon: const Icon(Icons.filter_alt_outlined, size: 18),
+                      label: const Text('Filter'),
                     ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: _openSortSheet,
+                      icon: const Icon(Icons.sort_rounded, size: 18),
+                      label: Text('Sort: ${_sortOption.label}'),
+                    ),
+                  ],
+                ),
+              ),
+              if (_hasActiveFilters)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (_minPrice != null) Chip(label: Text('Min ₹${_minPrice!.toStringAsFixed(0)}')),
+                        if (_maxPrice != null) Chip(label: Text('Max ₹${_maxPrice!.toStringAsFixed(0)}')),
+                        if (_minRating != null) Chip(label: Text('Rating ${_minRating!.toStringAsFixed(1)}+')),
+                        if (_brand.trim().isNotEmpty) Chip(label: Text('Brand: ${_brand.trim()}')),
+                        ActionChip(
+                          avatar: const Icon(Icons.clear_rounded, size: 16),
+                          label: const Text('Clear all'),
+                          onPressed: _clearAllFilters,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: _loadingProducts
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : _products.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'No products in ${_categories[_selectedIndex].name}',
+                                  style: const TextStyle(color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          )
+                        : NotificationListener<ScrollNotification>(
+                            onNotification: (notification) {
+                              if (notification.metrics.pixels > notification.metrics.maxScrollExtent - 200) {
+                                _loadMore();
+                              }
+                              return false;
+                            },
+                            child: GridView.builder(
+                              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.68,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                              ),
+                              itemCount: _products.length + (_loadingMore ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index >= _products.length) {
+                                  return const Center(child: CircularProgressIndicator());
+                                }
+
+                                final product = _products[index];
+                                return _ProductGridCard(
+                                  product: product,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => ProductDetailScreen(
+                                          slug: product.slug,
+                                          token: widget.token,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -358,4 +594,11 @@ class _ProductGridCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ActiveFilterChip {
+  const _ActiveFilterChip({required this.label, required this.onRemoved});
+
+  final String label;
+  final VoidCallback onRemoved;
 }

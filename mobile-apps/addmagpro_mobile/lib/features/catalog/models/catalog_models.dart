@@ -1,9 +1,15 @@
 class ProductListResponse {
-  ProductListResponse({required this.items, required this.currentPage, required this.lastPage});
+  ProductListResponse({
+    required this.items,
+    required this.currentPage,
+    required this.lastPage,
+    required this.availableBrands,
+  });
 
   final List<ProductListItem> items;
   final int currentPage;
   final int lastPage;
+  final List<BrandFilterOption> availableBrands;
 
   factory ProductListResponse.fromJson(Map<String, dynamic> json) {
     final data = json['data'];
@@ -11,6 +17,10 @@ class ProductListResponse {
     final pagination = meta is Map<String, dynamic> && meta['pagination'] is Map<String, dynamic>
         ? meta['pagination'] as Map<String, dynamic>
         : null;
+    final filters = meta is Map<String, dynamic> && meta['filters'] is Map<String, dynamic>
+        ? meta['filters'] as Map<String, dynamic>
+        : null;
+    final availableBrandsRaw = filters?['available_brands'];
 
     return ProductListResponse(
       items: data is List
@@ -21,6 +31,12 @@ class ProductListResponse {
           : <ProductListItem>[],
       currentPage: _toInt(pagination?['current_page']) ?? 1,
       lastPage: _toInt(pagination?['last_page']) ?? 1,
+      availableBrands: availableBrandsRaw is List
+          ? availableBrandsRaw
+              .whereType<Map<String, dynamic>>()
+              .map(BrandFilterOption.fromJson)
+              .toList(growable: false)
+          : <BrandFilterOption>[],
     );
   }
 }
@@ -50,6 +66,20 @@ class ProductListItem {
       effectivePrice: _toDouble(json['effective_price']) ?? 0,
       primaryImageUrl: json['primary_image_url'] as String?,
       ratingAvg: _toDouble(json['rating_avg']),
+    );
+  }
+}
+
+class BrandFilterOption {
+  BrandFilterOption({required this.id, required this.name});
+
+  final int id;
+  final String name;
+
+  factory BrandFilterOption.fromJson(Map<String, dynamic> json) {
+    return BrandFilterOption(
+      id: _toInt(json['id']) ?? 0,
+      name: (json['name'] as String?) ?? '-',
     );
   }
 }

@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
 use App\Models\Referral;
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
+use Illuminate\Support\Collection;
 
 class ReferralController extends Controller
 {
@@ -24,75 +25,7 @@ class ReferralController extends Controller
         $shareUrl  = url('/register?ref=' . $user->referral_code);
         $whatsappUrl = 'https://wa.me/?text=' . urlencode("Join AdMagPro using my referral code *{$user->referral_code}* and earn rewards! \n{$shareUrl}");
 
-        $depth = 3;
-        $teamRows = collect();
-        $parentIds = collect([$user->id]);
-
-        for ($level = 1; $level <= $depth; $level++) {
-            $levelRows = Referral::query()
-                ->whereIn('referrer_id', $parentIds->all())
-                ->with('referred')
-                ->latest()
-                ->get();
-
-            if ($levelRows->isEmpty()) {
-                break;
-            }
-
-            $teamRows = $teamRows->merge($levelRows->map(function (Referral $member) use ($level): array {
-                return [
-                    'id' => $member->id,
-                    'level' => $level,
-                    'status' => $member->status,
-                    'joined_at' => $member->created_at,
-                    'signup_reward_given' => $member->signup_reward_given,
-                    'purchase_reward_given' => $member->purchase_reward_given,
-                    'parent_user_id' => $member->referrer_id,
-                    'child_user_id' => $member->referred_id,
-                    'member' => $member->referred,
-                ];
-            }));
-
-            $parentIds = $levelRows->pluck('referred_id')->filter()->unique()->values();
-            if ($parentIds->isEmpty()) {
-                break;
-            }
-        }
-
-        $referralIds = $teamRows->pluck('id')->all();
-        $referralEarningMap = empty($referralIds)
-            ? []
-            : DB::table('wallet_transactions')
-                ->select('reference_id', DB::raw('SUM(amount) as total'))
-                ->where('user_id', $user->id)
-                ->where('type', 'credit')
-                ->where('reference_type', 'referrals')
-                ->whereIn('reference_id', $referralIds)
-                ->groupBy('reference_id')
-                ->pluck('total', 'reference_id')
-                ->map(fn ($value) => round((float) $value, 2))
-                ->all();
-
-        $teamRows = $teamRows->map(function (array $row) use ($referralEarningMap): array {
-            $row['earning'] = $referralEarningMap[$row['id']] ?? 0.0;
-            return $row;
-        })->values();
-
-        $levelStats = collect(range(1, $depth))
-            ->mapWithKeys(function (int $level) use ($teamRows): array {
-                $rows = $teamRows->where('level', $level);
-                return [
-                    'L' . $level => [
-                        'level' => $level,
-                        'count' => $rows->count(),
-                        'earnings' => round((float) $rows->sum('earning'), 2),
-                    ],
-                ];
-            });
-
-        $teamByParent = $teamRows
-            ->groupBy('parent_user_id')
-            ->map(fn ($rows) => $rows->sortBy('joined_at')->values());
+        $teamInsights = $this->buildTeamInsights($user);
 
         return view('account.referrals', compact(
             'user',
@@ -100,9 +33,91 @@ class ReferralController extends Controller
             'totalEarnings',
             'shareUrl',
             'whatsappUrl',
-            'levelStats',
-            'teamRows',
-            'teamByParent'
+            'teamInsights'
         ));
+    }
+
+    private function buildTeamInsights(User $user): array
+    {
+        $teamStructure = collect();
+        $frontier = collect([$user->id]);
+        $depth = 1;
+
+        while ($frontier->isNotEmpty()) {
+            $batch = Referral::query()
+                ->whereIn('referrer_id', $frontier->all())
+                ->with('referred:id,name,phone,avatar,is_active')
+                ->orderBy('created_at')
+                ->get();
+
+            if ($batch->isEmpty()) {
+                break;
+            }
+
+            $teamStructure = $teamStructure->merge(
+                $batch->map(function (Referral $referral) use ($depth): array {
+                    return [
+                        'id' => $referral->id,
+                        'parent_id' => $referral->referrer_id,
+                        'child_id' => $referral->referred_id,
+                        'depth' => $depth,
+                        'status' => $referral->status,
+                        'signup_reward_given' => $referral->signup_reward_given,
+                        'purchase_reward_given' => $referral->purchase_reward_given,
+                        'joined_at' => $referral->created_at,
+                        'member' => [
+                            'id' => $referral->referred?->id,
+                            'name' => $referral->referred?->name,
+                            'phone' => $referral->referred?->phone,
+                            'is_active' => (bool) ($referral->referred?->is_active ?? false),
+                            'avatar_url' => $referral->referred?->avatar ? imageUrl($referral->referred->avatar) : null,
+                        ],
+                    ];
+                })
+            );
+
+            $frontier = $batch->pluck('referred_id')->filter()->unique()->values();
+            $depth++;
+        }
+
+        return [
+            'rows' => $teamStructure->values(),
+            'level_summary' => $this->buildLevelSummary($user, $teamStructure),
+        ];
+    }
+
+    private function buildLevelSummary(User $user, Collection $teamStructure): Collection
+    {
+        if ($teamStructure->isEmpty()) {
+            return collect();
+        }
+
+        $creditByReferralId = $user->walletTransactions()
+            ->where('type', 'credit')
+            ->where('reference_type', 'referrals')
+            ->whereNotNull('reference_id')
+            ->selectRaw('reference_id, SUM(amount) as total_amount')
+            ->groupBy('reference_id')
+            ->pluck('total_amount', 'reference_id');
+
+        return $teamStructure
+            ->groupBy('depth')
+            ->sortKeys()
+            ->map(function (Collection $levelRows, int $depth) use ($creditByReferralId): array {
+                $members = $levelRows->count();
+                $active = $levelRows->where('member.is_active', true)->count();
+                $inactive = $members - $active;
+                $earnings = $levelRows->sum(
+                    fn (array $row): float => (float) ($creditByReferralId[$row['id']] ?? 0)
+                );
+
+                return [
+                    'depth' => $depth,
+                    'members' => $members,
+                    'active_members' => $active,
+                    'inactive_members' => $inactive,
+                    'earnings' => round($earnings, 2),
+                ];
+            });
     }
 }
