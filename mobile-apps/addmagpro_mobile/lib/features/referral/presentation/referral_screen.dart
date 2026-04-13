@@ -173,11 +173,19 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 ),
                 const SizedBox(height: 14),
                 // Stats
-                Row(
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
-                    Expanded(child: _SummaryCard(label: 'Referrals', value: '${data.totalReferrals}')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _SummaryCard(label: 'Earnings', value: '₹${data.totalEarnings.toStringAsFixed(0)}')),
+                    _SummaryCard(label: 'Referrals', value: '${data.totalReferrals}'),
+                    _SummaryCard(label: 'Active', value: '${data.activeReferralsCount}'),
+                    _SummaryCard(label: 'Inactive', value: '${data.inactiveReferralsCount}'),
+                    if (data.firstPurchaseCompletedCount != null)
+                      _SummaryCard(
+                        label: '1st Purchase',
+                        value: '${data.firstPurchaseCompletedCount}',
+                      ),
+                    _SummaryCard(label: 'Earnings', value: '₹${data.totalEarnings.toStringAsFixed(0)}'),
                   ],
                 ),
               ],
@@ -210,26 +218,31 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 20,
+    final width = (MediaQuery.sizeOf(context).width - 56) / 2;
+
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

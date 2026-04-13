@@ -15,9 +15,9 @@ class ReferralController extends Controller
     {
         $user = $request->user();
         $perPage = min((int) $request->integer('per_page', 20), 50);
+        $baseReferralQuery = Referral::query()->where('referrer_id', $user->id);
 
-        $referrals = Referral::query()
-            ->where('referrer_id', $user->id)
+        $referrals = (clone $baseReferralQuery)
             ->with('referred:id,name,phone,avatar')
             ->latest()
             ->paginate($perPage)
@@ -32,6 +32,9 @@ class ReferralController extends Controller
             'summary' => [
                 'referral_code' => $user->referral_code,
                 'total_referrals' => $referrals->total(),
+                'active_referrals_count' => (clone $baseReferralQuery)->where('status', 'active')->count(),
+                'inactive_referrals_count' => (clone $baseReferralQuery)->where('status', 'pending')->count(),
+                'first_purchase_completed_count' => (clone $baseReferralQuery)->where('purchase_reward_given', true)->count(),
                 'total_earnings' => round((float) $user->walletTransactions()
                     ->where('type', 'credit')
                     ->where('reference_type', 'referrals')
