@@ -9,6 +9,18 @@ import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
 import 'product_detail_screen.dart';
 
+enum _CatalogSortOption {
+  latest('latest', 'Latest'),
+  priceAsc('price_asc', 'Price: Low to High'),
+  priceDesc('price_desc', 'Price: High to Low'),
+  rating('rating', 'Rating');
+
+  const _CatalogSortOption(this.apiValue, this.label);
+
+  final String apiValue;
+  final String label;
+}
+
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key, this.token});
 
@@ -32,12 +44,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   int _page = 1;
   int _lastPage = 1;
   bool _loadingMore = false;
-  String _sortBy = 'newest';
+  _CatalogSortOption _sortOption = _CatalogSortOption.latest;
   double? _minPrice;
   double? _maxPrice;
   double? _minRating;
-  int? _brandId;
-  List<BrandFilterOption> _availableBrands = <BrandFilterOption>[];
+  String _brand = '';
 
   @override
   void initState() {
@@ -90,11 +101,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         final response = await _catalogRepository.fetchProducts(
           page: _page,
           categorySlug: category.slug,
-          sort: _mapSortForApi(_sortBy),
+          sort: _sortOption.apiValue,
           minPrice: _minPrice,
           maxPrice: _maxPrice,
-          minRating: _minRating,
-          brandId: _brandId,
+          rating: _minRating,
+          brand: _brand.trim().isEmpty ? null : _brand.trim(),
         );
         if (!mounted) return;
         setState(() {
@@ -131,186 +142,143 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     _loadProducts(reset: true);
   }
 
-  String _mapSortForApi(String value) {
-    switch (value) {
-      case 'price_asc':
-      case 'price_desc':
-      case 'rating':
-        return value;
-      default:
-        return 'latest';
-    }
-  }
+  bool get _hasActiveFilters =>
+      _minPrice != null || _maxPrice != null || _minRating != null || _brand.trim().isNotEmpty;
 
-  String _sortLabel(String value) {
-    switch (value) {
-      case 'price_asc':
-        return 'Price: Low to High';
-      case 'price_desc':
-        return 'Price: High to Low';
-      case 'rating':
-        return 'Top Rated';
-      default:
-        return 'Newest';
-    }
-  }
+  Future<void> _openSortSheet() async {
+    final selected = await showModalBottomSheet<_CatalogSortOption>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _CatalogSortOption.values
+                .map(
+                  (option) => RadioListTile<_CatalogSortOption>(
+                    title: Text(option.label),
+                    value: option,
+                    groupValue: _sortOption,
+                    onChanged: (value) => Navigator.of(context).pop(value),
+                  ),
+                )
+                .toList(),
+          ),
+        );
+      },
+    );
 
-  List<_ActiveFilterChip> _buildActiveFilterChips() {
-    final chips = <_ActiveFilterChip>[];
-
-    if (_sortBy != 'newest') {
-      chips.add(
-        _ActiveFilterChip(
-          label: 'Sort: ${_sortLabel(_sortBy)}',
-          onRemoved: () {
-            setState(() => _sortBy = 'newest');
-            _loadProducts(reset: true);
-          },
-        ),
-      );
-    }
-
-    if (_minPrice != null || _maxPrice != null) {
-      final minText = _minPrice?.toStringAsFixed(0) ?? '0';
-      final maxText = _maxPrice?.toStringAsFixed(0) ?? 'Any';
-      chips.add(
-        _ActiveFilterChip(
-          label: 'Price: ₹$minText - ₹$maxText',
-          onRemoved: () {
-            setState(() {
-              _minPrice = null;
-              _maxPrice = null;
-            });
-            _loadProducts(reset: true);
-          },
-        ),
-      );
-    }
-
-    if (_minRating != null) {
-      chips.add(
-        _ActiveFilterChip(
-          label: 'Rating: ${_minRating!.toStringAsFixed(1)}+',
-          onRemoved: () {
-            setState(() => _minRating = null);
-            _loadProducts(reset: true);
-          },
-        ),
-      );
-    }
-
-    if (_brandId != null) {
-      BrandFilterOption? brand;
-      for (final item in _availableBrands) {
-        if (item.id == _brandId) {
-          brand = item;
-          break;
-        }
-      }
-      chips.add(
-        _ActiveFilterChip(
-          label: 'Brand: ${brand?.name ?? 'Selected'}',
-          onRemoved: () {
-            setState(() => _brandId = null);
-            _loadProducts(reset: true);
-          },
-        ),
-      );
-    }
-
-    return chips;
+    if (selected == null || selected == _sortOption) return;
+    setState(() => _sortOption = selected);
+    _loadProducts(reset: true);
   }
 
   Future<void> _openFilterSheet() async {
-    final minController = TextEditingController(text: _minPrice?.toStringAsFixed(0) ?? '');
-    final maxController = TextEditingController(text: _maxPrice?.toStringAsFixed(0) ?? '');
-    double? sheetMinRating = _minRating;
-    int? sheetBrandId = _brandId;
+    final minPriceController = TextEditingController(
+      text: _minPrice == null ? '' : _minPrice!.toStringAsFixed(0),
+    );
+    final maxPriceController = TextEditingController(
+      text: _maxPrice == null ? '' : _maxPrice!.toStringAsFixed(0),
+    );
+    final brandController = TextEditingController(text: _brand);
 
+    double? draftRating = _minRating;
     final applied = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      showDragHandle: true,
       builder: (context) {
         return StatefulBuilder(
-          builder: (context, setModalState) {
+          builder: (context, setSheetState) {
             return Padding(
               padding: EdgeInsets.only(
                 left: 16,
                 right: 16,
-                top: 16,
+                top: 8,
                 bottom: MediaQuery.of(context).viewInsets.bottom + 16,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Filters', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: minController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Min price'),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Filter Products', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: minPriceController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'Min Price', prefixText: '₹'),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: maxController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Max price'),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: maxPriceController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'Max Price', prefixText: '₹'),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<double?>(
-                    value: sheetMinRating,
-                    decoration: const InputDecoration(labelText: 'Minimum rating'),
-                    items: const [
-                      DropdownMenuItem<double?>(value: null, child: Text('Any')),
-                      DropdownMenuItem<double?>(value: 4.5, child: Text('4.5+')),
-                      DropdownMenuItem<double?>(value: 4.0, child: Text('4.0+')),
-                      DropdownMenuItem<double?>(value: 3.5, child: Text('3.5+')),
-                    ],
-                    onChanged: (value) => setModalState(() => sheetMinRating = value),
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<int?>(
-                    value: sheetBrandId,
-                    decoration: const InputDecoration(labelText: 'Brand'),
-                    items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text('Any')),
-                      ..._availableBrands.map(
-                        (brand) => DropdownMenuItem<int?>(value: brand.id, child: Text(brand.name)),
-                      ),
-                    ],
-                    onChanged: _availableBrands.isEmpty ? null : (value) => setModalState(() => sheetBrandId = value),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          minController.clear();
-                          maxController.clear();
-                          setModalState(() {
-                            sheetMinRating = null;
-                            sheetBrandId = null;
-                          });
-                        },
-                        child: const Text('Reset'),
-                      ),
-                      const Spacer(),
-                      FilledButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Apply'),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<double?>(
+                      value: draftRating,
+                      decoration: const InputDecoration(labelText: 'Minimum Rating'),
+                      items: const [
+                        DropdownMenuItem<double?>(value: null, child: Text('Any')),
+                        DropdownMenuItem<double?>(value: 4.5, child: Text('4.5+')),
+                        DropdownMenuItem<double?>(value: 4.0, child: Text('4.0+')),
+                        DropdownMenuItem<double?>(value: 3.5, child: Text('3.5+')),
+                        DropdownMenuItem<double?>(value: 3.0, child: Text('3.0+')),
+                      ],
+                      onChanged: (value) => setSheetState(() => draftRating = value),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: brandController,
+                      decoration: const InputDecoration(labelText: 'Brand'),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            minPriceController.clear();
+                            maxPriceController.clear();
+                            brandController.clear();
+                            setSheetState(() => draftRating = null);
+                          },
+                          child: const Text('Reset'),
+                        ),
+                        const Spacer(),
+                        FilledButton(
+                          onPressed: () {
+                            final minPrice = double.tryParse(minPriceController.text.trim());
+                            final maxPrice = double.tryParse(maxPriceController.text.trim());
+                            final brand = brandController.text.trim();
+                            if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Min price cannot be greater than max price')),
+                              );
+                              return;
+                            }
+                            setState(() {
+                              _minPrice = minPrice;
+                              _maxPrice = maxPrice;
+                              _minRating = draftRating;
+                              _brand = brand;
+                            });
+                            Navigator.of(context).pop(true);
+                          },
+                          child: const Text('Apply'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -318,17 +286,24 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       },
     );
 
+    minPriceController.dispose();
+    maxPriceController.dispose();
+    brandController.dispose();
+
     if (applied == true) {
-      final parsedMin = double.tryParse(minController.text.trim());
-      final parsedMax = double.tryParse(maxController.text.trim());
-      setState(() {
-        _minPrice = parsedMin;
-        _maxPrice = parsedMax;
-        _minRating = sheetMinRating;
-        _brandId = sheetBrandId;
-      });
       _loadProducts(reset: true);
     }
+  }
+
+  void _clearAllFilters() {
+    if (!_hasActiveFilters) return;
+    setState(() {
+      _minPrice = null;
+      _maxPrice = null;
+      _minRating = null;
+      _brand = '';
+    });
+    _loadProducts(reset: true);
   }
 
   @override
@@ -440,90 +415,46 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 4),
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
                 child: Row(
                   children: [
-                    Expanded(
-                      child: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          if (value == _sortBy) return;
-                          setState(() => _sortBy = value);
-                          _loadProducts(reset: true);
-                        },
-                        itemBuilder: (context) => const [
-                          PopupMenuItem(value: 'newest', child: Text('Newest')),
-                          PopupMenuItem(value: 'price_asc', child: Text('Price: Low to High')),
-                          PopupMenuItem(value: 'price_desc', child: Text('Price: High to Low')),
-                          PopupMenuItem(value: 'rating', child: Text('Top Rated')),
-                        ],
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.borderLight),
-                            color: Colors.white,
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.sort_rounded, size: 18),
-                              const SizedBox(width: 8),
-                              Expanded(child: Text('Sort: ${_sortLabel(_sortBy)}', style: const TextStyle(fontSize: 12))),
-                              const Icon(Icons.keyboard_arrow_down_rounded),
-                            ],
-                          ),
-                        ),
-                      ),
+                    OutlinedButton.icon(
+                      onPressed: _openFilterSheet,
+                      icon: const Icon(Icons.filter_alt_outlined, size: 18),
+                      label: const Text('Filter'),
                     ),
                     const SizedBox(width: 8),
                     OutlinedButton.icon(
-                      onPressed: _openFilterSheet,
-                      icon: const Icon(Icons.tune_rounded),
-                      label: const Text('Filters'),
+                      onPressed: _openSortSheet,
+                      icon: const Icon(Icons.sort_rounded, size: 18),
+                      label: Text('Sort: ${_sortOption.label}'),
                     ),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Row(
-                  children: [
-                    if (activeChips.isNotEmpty)
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _sortBy = 'newest';
-                            _minPrice = null;
-                            _maxPrice = null;
-                            _minRating = null;
-                            _brandId = null;
-                          });
-                          _loadProducts(reset: true);
-                        },
-                        child: const Text('Clear all'),
-                      ),
-                  ],
-                ),
-              ),
-              if (activeChips.isNotEmpty)
-                SizedBox(
-                  height: 38,
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    scrollDirection: Axis.horizontal,
-                    children: activeChips
-                        .map(
-                          (chip) => Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: InputChip(
-                              label: Text(chip.label),
-                              onDeleted: chip.onRemoved,
-                            ),
-                          ),
-                        )
-                        .toList(growable: false),
+              if (_hasActiveFilters)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (_minPrice != null) Chip(label: Text('Min ₹${_minPrice!.toStringAsFixed(0)}')),
+                        if (_maxPrice != null) Chip(label: Text('Max ₹${_maxPrice!.toStringAsFixed(0)}')),
+                        if (_minRating != null) Chip(label: Text('Rating ${_minRating!.toStringAsFixed(1)}+')),
+                        if (_brand.trim().isNotEmpty) Chip(label: Text('Brand: ${_brand.trim()}')),
+                        ActionChip(
+                          avatar: const Icon(Icons.clear_rounded, size: 16),
+                          label: const Text('Clear all'),
+                          onPressed: _clearAllFilters,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              const SizedBox(height: 4),
               Expanded(
                 child: _loadingProducts
                     ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
@@ -549,7 +480,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                               return false;
                             },
                             child: GridView.builder(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
                               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
                                 childAspectRatio: 0.68,

@@ -10,6 +10,7 @@ use App\Models\OrderItem;
 use App\Services\RazorpayService;
 use App\Services\WalletService;
 use App\Support\ApiResponse;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -21,6 +22,7 @@ class CheckoutController extends Controller
     public function __construct(
         private readonly RazorpayService $razorpay,
         private readonly WalletService $wallet,
+        private readonly PushNotificationService $pushNotifications,
     ) {}
 
     public function createRazorpayOrder(Request $request)
@@ -164,6 +166,13 @@ class CheckoutController extends Controller
 
                 return $order;
             });
+            $this->pushNotifications->notifyUser(
+                $user,
+                'Order placed successfully',
+                "Your order {$order->order_number} has been placed.",
+                'order',
+                ['event' => 'order_created', 'order_id' => (string) $order->id],
+            );
         } catch (\RuntimeException $error) {
             return $this->error('Wallet payment failed', 422, [
                 'wallet' => [$error->getMessage()],

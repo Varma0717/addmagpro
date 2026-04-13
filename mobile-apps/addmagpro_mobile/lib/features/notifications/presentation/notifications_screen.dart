@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/notifications/notification_sync_bus.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/notification_repository.dart';
 import '../models/notification_item.dart';
@@ -16,6 +19,7 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   late final NotificationRepository _repository;
+  StreamSubscription<Map<String, dynamic>>? _syncSubscription;
   bool _loading = true;
   String? _error;
   List<NotificationItem> _items = const [];
@@ -24,7 +28,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     _repository = NotificationRepository(apiClient: ApiClient());
+    _syncSubscription = NotificationSyncBus.stream.listen((_) => _load());
     _load();
+  }
+
+  @override
+  void dispose() {
+    _syncSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {

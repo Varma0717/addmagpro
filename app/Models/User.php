@@ -88,6 +88,11 @@ class User extends Authenticatable
         return $this->hasMany(AppNotification::class);
     }
 
+    public function deviceTokens()
+    {
+        return $this->hasMany(UserDeviceToken::class);
+    }
+
     public function coupons()
     {
         return $this->belongsToMany(Coupon::class, 'user_coupons')->withPivot('used_at')->withTimestamps();

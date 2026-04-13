@@ -7,6 +7,7 @@ use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Coupon;
+use App\Models\District;
 use App\Models\Product;
 use App\Models\ServiceListing;
 use App\Support\ApiResponse;
@@ -22,6 +23,16 @@ class CatalogController extends Controller
         $latitude = $request->filled('lat') ? (float) $request->input('lat') : null;
         $longitude = $request->filled('lng') ? (float) $request->input('lng') : null;
         $city = trim((string) $request->input('city', ''));
+        $districtId = $request->filled('district_id') ? (int) $request->input('district_id') : null;
+        $stateId = $request->filled('state_id') ? (int) $request->input('state_id') : null;
+
+        $districtName = null;
+        if ($districtId !== null) {
+            $district = District::query()
+                ->when($stateId !== null, fn($query) => $query->where('state_id', $stateId))
+                ->find($districtId);
+            $districtName = $district?->district_name;
+        }
 
         $banners = Banner::active()
             ->forPlacement('home')
@@ -126,6 +137,13 @@ class CatalogController extends Controller
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
                 ->orderByRaw('POW(latitude - ?, 2) + POW(longitude - ?, 2)', [$latitude, $longitude]);
+        } elseif ($districtName !== null && $districtName !== '') {
+            $nearbyQuery
+                ->where(function ($query) use ($districtName): void {
+                    $query->where('city', 'like', '%' . $districtName . '%')
+                        ->orWhere('address', 'like', '%' . $districtName . '%');
+                })
+                ->latest();
         } elseif ($city !== '') {
             $nearbyQuery
                 ->where('city', 'like', '%' . $city . '%')

@@ -12,15 +12,15 @@ class CatalogRepository {
     String? sort,
     double? minPrice,
     double? maxPrice,
-    double? minRating,
-    int? brandId,
+    double? rating,
+    String? brand,
   }) async {
     final params = <String>['page=$page'];
     if (categorySlug != null && categorySlug.trim().isNotEmpty) {
       params.add('category_slug=${Uri.encodeComponent(categorySlug.trim())}');
     }
     if (sort != null && sort.trim().isNotEmpty) {
-      params.add('sort=${Uri.encodeComponent(sort.trim())}');
+      params.add('sort=${Uri.encodeQueryComponent(sort.trim())}');
     }
     if (minPrice != null) {
       params.add('min_price=${minPrice.toStringAsFixed(0)}');
@@ -28,11 +28,11 @@ class CatalogRepository {
     if (maxPrice != null) {
       params.add('max_price=${maxPrice.toStringAsFixed(0)}');
     }
-    if (minRating != null) {
-      params.add('min_rating=$minRating');
+    if (rating != null) {
+      params.add('rating=${rating.toStringAsFixed(1)}');
     }
-    if (brandId != null) {
-      params.add('brand_id=$brandId');
+    if (brand != null && brand.trim().isNotEmpty) {
+      params.add('brand=${Uri.encodeQueryComponent(brand.trim())}');
     }
 
     final payload = await _apiClient.get('/products?${params.join('&')}');
