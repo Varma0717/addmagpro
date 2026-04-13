@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 import '../../../app_state.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../notifications/presentation/notifications_screen.dart';
+import 'coupons_screen.dart';
 import '../../orders/presentation/orders_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 import '../../referral/presentation/referral_screen.dart';
 import '../../wallet/presentation/wallet_screen.dart';
+import 'settings_screen.dart';
+import 'support_screen.dart';
+import 'transactions_screen.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key, required this.appState});
@@ -94,15 +98,14 @@ class AccountScreen extends StatelessWidget {
           onTap: () => _push(context, OrdersScreen(token: token ?? '')),
         ),
         _MenuTile(
+          icon: Icons.swap_horiz_rounded,
+          label: 'Transactions',
+          onTap: () => _push(context, TransactionsScreen(token: token ?? '')),
+        ),
+        _MenuTile(
           icon: Icons.account_balance_wallet_outlined,
           label: 'Wallet',
           onTap: () => _push(context, WalletScreen(token: token ?? '')),
-        ),
-        _MenuTile(
-          icon: Icons.groups_2_outlined,
-          label: 'Referral Network',
-          subtitle: 'Earn by inviting friends',
-          onTap: () => _push(context, ReferralScreen(token: token ?? '', memberName: user?.name ?? 'Member')),
         ),
         _MenuTile(
           icon: Icons.notifications_none_rounded,
@@ -110,7 +113,30 @@ class AccountScreen extends StatelessWidget {
           onTap: () => _push(context, NotificationsScreen(token: token ?? '')),
         ),
         const SizedBox(height: 12),
-        _SectionLabel(label: 'Settings'),
+        _SectionLabel(label: 'Rewards'),
+        _MenuTile(
+          icon: Icons.local_offer_outlined,
+          label: 'Coupons',
+          onTap: () => _push(context, const CouponsScreen()),
+        ),
+        _MenuTile(
+          icon: Icons.groups_2_outlined,
+          label: 'Referral Network',
+          subtitle: 'Earn by inviting friends',
+          onTap: () => _push(context, ReferralScreen(token: token ?? '', memberName: user?.name ?? 'Member')),
+        ),
+        const SizedBox(height: 12),
+        _SectionLabel(label: 'Help & Settings'),
+        _MenuTile(
+          icon: Icons.support_agent_rounded,
+          label: 'Support',
+          onTap: () => _push(context, const SupportScreen()),
+        ),
+        _MenuTile(
+          icon: Icons.settings_outlined,
+          label: 'Settings',
+          onTap: () => _push(context, const SettingsScreen()),
+        ),
         _MenuTile(
           icon: Icons.person_outline_rounded,
           label: 'Edit Profile',
