@@ -9,18 +9,30 @@ class CatalogRepository {
   Future<ProductListResponse> fetchProducts({
     int page = 1,
     String? categorySlug,
-    int? stateId,
-    int? districtId,
+    String? sort,
+    double? minPrice,
+    double? maxPrice,
+    double? rating,
+    String? brand,
   }) async {
     final params = <String>['page=$page'];
     if (categorySlug != null && categorySlug.trim().isNotEmpty) {
       params.add('category_slug=${Uri.encodeComponent(categorySlug.trim())}');
     }
-    if (stateId != null) {
-      params.add('state_id=$stateId');
+    if (sort != null && sort.trim().isNotEmpty) {
+      params.add('sort=${Uri.encodeQueryComponent(sort.trim())}');
     }
-    if (districtId != null) {
-      params.add('district_id=$districtId');
+    if (minPrice != null) {
+      params.add('min_price=${minPrice.toStringAsFixed(0)}');
+    }
+    if (maxPrice != null) {
+      params.add('max_price=${maxPrice.toStringAsFixed(0)}');
+    }
+    if (rating != null) {
+      params.add('rating=${rating.toStringAsFixed(1)}');
+    }
+    if (brand != null && brand.trim().isNotEmpty) {
+      params.add('brand=${Uri.encodeQueryComponent(brand.trim())}');
     }
 
     final payload = await _apiClient.get('/products?${params.join('&')}');

@@ -14,6 +14,15 @@ class ReferralRepository {
       throw ApiException('Invalid referrals response');
     }
 
-    return ReferralResponse.fromJson(data);
+    final teamPayload = await _apiClient.get('/account/referrals/team?depth=3', bearerToken: token);
+    final teamData = teamPayload['data'];
+    if (teamData is! Map<String, dynamic>) {
+      throw ApiException('Invalid referral team response');
+    }
+
+    return ReferralResponse.fromJson(
+      data,
+      team: ReferralTeamResponse.fromJson(teamData),
+    );
   }
 }

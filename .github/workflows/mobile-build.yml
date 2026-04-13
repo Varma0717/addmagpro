@@ -1,0 +1,163 @@
+name: Mobile Builds
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
+    paths:
+      - "mobile-apps/addmagpro_mobile/**"
+      - ".github/workflows/mobile-build.yml"
+  workflow_dispatch:
+
+jobs:
+  android:
+    name: Android APK/AAB
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-apps/addmagpro_mobile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Prepare Android signing files
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEY_PROPERTIES" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+            printf "%s" "$ANDROID_KEY_PROPERTIES" > android/key.properties
+            echo "Android signing files configured."
+          else
+            echo "Android signing secrets not fully configured; release signing may fail depending on Gradle config."
+          fi
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Build release AAB
+        run: flutter build appbundle --release
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-artifacts-${{ github.run_number }}
+          if-no-files-found: error
+          path: |
+            mobile-apps/addmagpro_mobile/build/app/outputs/flutter-apk/app-debug.apk
+            mobile-apps/addmagpro_mobile/build/app/outputs/flutter-apk/app-release.apk
+            mobile-apps/addmagpro_mobile/build/app/outputs/bundle/release/app-release.aab
+
+  ios:
+    name: iOS IPA/Archive
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile-apps/addmagpro_mobile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Configure iOS signing assets (optional)
+        env:
+          IOS_CERTIFICATE_P12_BASE64: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          if [ -n "$IOS_CERTIFICATE_P12_BASE64" ] && [ -n "$IOS_CERTIFICATE_PASSWORD" ] && [ -n "$IOS_PROVISIONING_PROFILE_BASE64" ] && [ -n "$IOS_TEAM_ID" ]; then
+            CERT_PATH="$RUNNER_TEMP/certificate.p12"
+            PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
+            KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+
+            echo "$IOS_CERTIFICATE_P12_BASE64" | base64 --decode > "$CERT_PATH"
+            echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
+
+            security create-keychain -p "" "$KEYCHAIN_PATH"
+            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+            security unlock-keychain -p "" "$KEYCHAIN_PATH"
+            security import "$CERT_PATH" -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+            security list-keychains -d user -s "$KEYCHAIN_PATH"
+
+            mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+            cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/profile.mobileprovision"
+
+            cat > ios/ExportOptions.plist <<PLIST
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>signingStyle</key>
+              <string>automatic</string>
+              <key>teamID</key>
+              <string>$IOS_TEAM_ID</string>
+            </dict>
+            </plist>
+            PLIST
+
+            echo "IOS_SIGNING_READY=true" >> $GITHUB_ENV
+          else
+            echo "IOS_SIGNING_READY=false" >> $GITHUB_ENV
+            echo "iOS signing secrets are missing; building without code signing."
+          fi
+
+      - name: Build signed IPA
+        if: env.IOS_SIGNING_READY == 'true'
+        run: flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
+
+      - name: Build unsigned iOS archive fallback
+        if: env.IOS_SIGNING_READY != 'true'
+        run: flutter build ipa --release --no-codesign
+
+      - name: Zip xcarchive
+        run: |
+          if [ -d build/ios/archive/Runner.xcarchive ]; then
+            cd build/ios/archive
+            zip -r Runner.xcarchive.zip Runner.xcarchive
+          fi
+
+      - name: Upload iOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-artifacts-${{ github.run_number }}
+          if-no-files-found: warn
+          path: |
+            mobile-apps/addmagpro_mobile/build/ios/ipa/*.ipa
+            mobile-apps/addmagpro_mobile/build/ios/archive/Runner.xcarchive.zip
