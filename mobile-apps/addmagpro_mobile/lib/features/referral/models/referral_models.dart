@@ -23,7 +23,10 @@ class ReferralResponse {
   final List<TeamNode> teamStructure;
   final List<LevelSummary> levelSummary;
 
-  factory ReferralResponse.fromJson(Map<String, dynamic> json) {
+  factory ReferralResponse.fromJson(
+    Map<String, dynamic> json, {
+    ReferralTeamResponse? team,
+  }) {
     final summary = json['summary'] as Map<String, dynamic>? ?? <String, dynamic>{};
     final share = json['share'] as Map<String, dynamic>? ?? <String, dynamic>{};
     final items = (json['referrals'] as List<dynamic>? ?? <dynamic>[])
