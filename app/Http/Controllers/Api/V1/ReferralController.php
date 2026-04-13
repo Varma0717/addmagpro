@@ -29,6 +29,11 @@ class ReferralController extends Controller
         $whatsappUrl = 'https://wa.me/?text=' . urlencode(
             "Join AdMagPro using my referral code {$user->referral_code} and earn rewards!\n{$shareUrl}"
         );
+        $activeReferrals = Referral::query()
+            ->where('referrer_id', $user->id)
+            ->where('status', 'active')
+            ->count();
+        $teamStructure = $this->buildTeamStructure($user->id);
 
         $teamInsights = $this->buildTeamInsights($user);
 
@@ -36,10 +41,13 @@ class ReferralController extends Controller
             'summary' => [
                 'referral_code' => $user->referral_code,
                 'total_referrals' => $referrals->total(),
+                'active_referrals' => $activeReferrals,
+                'inactive_referrals' => max($referrals->total() - $activeReferrals, 0),
                 'total_earnings' => round((float) $user->walletTransactions()
                     ->where('type', 'credit')
                     ->where('reference_type', 'referrals')
                     ->sum('amount'), 2),
+                'team_structure' => $teamStructure,
             ],
             'share' => [
                 'share_url' => $shareUrl,

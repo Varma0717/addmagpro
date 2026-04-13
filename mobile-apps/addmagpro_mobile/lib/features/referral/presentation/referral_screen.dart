@@ -250,9 +250,19 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: _SummaryCard(label: 'Active', value: '${data.activeReferrals}')),
+                    const SizedBox(width: 12),
+                    Expanded(child: _SummaryCard(label: 'Inactive', value: '${data.inactiveReferrals}')),
+                  ],
+                ),
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          _TeamStructureCard(summary: data.teamStructure),
           const SizedBox(height: 20),
           const Text(
             'Team Structure',
@@ -321,6 +331,93 @@ class _ReferralScreenState extends State<ReferralScreen> {
             )
           else
             for (final referral in data.referrals) _ReferralCard(item: referral),
+        ],
+      ),
+    );
+  }
+}
+
+class _TeamStructureCard extends StatelessWidget {
+  const _TeamStructureCard({required this.summary});
+
+  final TeamStructureSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        title: const Text(
+          'Team Structure',
+          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+        ),
+        subtitle: Text(
+          '${summary.totalTeamSize} members • ${summary.maxDepth} levels',
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+        ),
+        children: [
+          if (summary.levels.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text('No team members yet', style: TextStyle(color: AppColors.textMuted)),
+            )
+          else
+            for (final level in summary.levels) ...[
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Level ${level.level} • ${level.count} members',
+                      style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 8),
+                    ...level.members.map((member) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 14,
+                            backgroundColor: AppColors.primaryLight,
+                            backgroundImage: member.avatarUrl != null ? NetworkImage(member.avatarUrl!) : null,
+                            child: member.avatarUrl == null
+                                ? Text(
+                                    member.name.characters.first,
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${member.name} (${member.phone ?? '-'})',
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+                  ],
+                ),
+              ),
+            ],
         ],
       ),
     );

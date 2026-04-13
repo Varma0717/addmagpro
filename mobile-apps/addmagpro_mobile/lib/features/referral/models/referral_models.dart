@@ -2,6 +2,8 @@ class ReferralResponse {
   const ReferralResponse({
     required this.referralCode,
     required this.totalReferrals,
+    required this.activeReferrals,
+    required this.inactiveReferrals,
     required this.totalEarnings,
     required this.shareUrl,
     required this.whatsappUrl,
@@ -12,6 +14,8 @@ class ReferralResponse {
 
   final String referralCode;
   final int totalReferrals;
+  final int activeReferrals;
+  final int inactiveReferrals;
   final double totalEarnings;
   final String shareUrl;
   final String whatsappUrl;
@@ -38,6 +42,8 @@ class ReferralResponse {
     return ReferralResponse(
       referralCode: summary['referral_code'] as String? ?? '-',
       totalReferrals: (summary['total_referrals'] as num?)?.toInt() ?? 0,
+      activeReferrals: (summary['active_referrals'] as num?)?.toInt() ?? 0,
+      inactiveReferrals: (summary['inactive_referrals'] as num?)?.toInt() ?? 0,
       totalEarnings: (summary['total_earnings'] as num?)?.toDouble() ?? 0,
       shareUrl: share['share_url'] as String? ?? '',
       whatsappUrl: share['whatsapp_url'] as String? ?? '',
