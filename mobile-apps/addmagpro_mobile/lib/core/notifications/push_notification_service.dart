@@ -86,6 +86,23 @@ class PushNotificationService {
     }
   }
 
+  Future<void> unregisterToken({required String authToken}) async {
+    if (authToken.isEmpty) return;
+
+    final fcmToken = await _messaging.getToken();
+    if (fcmToken == null || fcmToken.isEmpty) return;
+
+    try {
+      await _apiClient.delete(
+        '/account/device-tokens',
+        bearerToken: authToken,
+        body: {'token': fcmToken},
+      );
+    } catch (_) {
+      // Best-effort cleanup to avoid blocking logout.
+    }
+  }
+
   Future<void> _requestPermissions() async {
     await _messaging.requestPermission(
       alert: true,

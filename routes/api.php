@@ -91,6 +91,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/account/wishlist/check', [ApiWishlistController::class, 'check']);
 
         Route::post('/account/device-tokens', [DeviceTokenController::class, 'upsert']);
+        Route::delete('/account/device-tokens', [DeviceTokenController::class, 'destroy']);
     });
 
     Route::get('/ads/{placement}', [AdsController::class, 'index'])->whereIn('placement', ['home', 'category', 'product']);
