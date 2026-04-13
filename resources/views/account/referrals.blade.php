@@ -10,7 +10,6 @@
     Refer & Earn
 </h2>
 
-{{-- Share Card --}}
 <div class="bg-gradient-to-br from-brand-500 via-brand-600 to-pink-500 text-white rounded-2xl p-7 mb-6 shadow-glow relative overflow-hidden">
     <div class="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
     <p class="text-sm opacity-80 mb-1">Your Referral Code</p>
@@ -26,7 +25,6 @@
     <p class="text-sm opacity-70 relative">Share this code and earn rewards when friends sign up and shop!</p>
 </div>
 
-{{-- Stats --}}
 <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
     <div class="card p-5 text-center">
         <p class="text-3xl font-bold font-display text-brand-600">{{ $referrals->count() }}</p>
@@ -55,7 +53,68 @@
     </div>
 </div>
 
-{{-- Referrals List --}}
+<div class="card overflow-hidden mb-6">
+    <div class="px-6 py-4 border-b border-surface-100 font-semibold text-surface-700 flex items-center gap-2">
+        <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.125 1.125 0 0 1 1.59 0L21.75 12m-3 3v4.5A1.5 1.5 0 0 1 17.25 21h-3.75v-4.5a1.5 1.5 0 0 0-1.5-1.5h0a1.5 1.5 0 0 0-1.5 1.5V21H6.75a1.5 1.5 0 0 1-1.5-1.5V15" />
+        </svg>
+        Team Structure
+    </div>
+
+    @php
+        $teamRows = $teamInsights['rows'] ?? collect();
+        $levelSummary = $teamInsights['level_summary'] ?? collect();
+    @endphp
+
+    @if($teamRows->isEmpty())
+        <div class="px-6 py-10 text-center text-surface-400">No team members yet. Invite your first referral to build your structure.</div>
+    @else
+        <div class="px-6 py-4 border-b border-surface-100 grid gap-3 md:grid-cols-3">
+            @foreach($levelSummary as $level)
+                <div class="rounded-xl border border-surface-200 p-3 bg-surface-50">
+                    <p class="text-sm font-semibold text-surface-700">Level {{ $level['depth'] }}</p>
+                    <p class="text-xs text-surface-500 mt-1">Members: {{ $level['members'] }} · Active: {{ $level['active_members'] }} · Inactive: {{ $level['inactive_members'] }}</p>
+                    <p class="text-sm font-semibold text-emerald-600 mt-1">Earnings: ₹{{ number_format($level['earnings'], 2) }}</p>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="p-4 space-y-3">
+            @foreach($teamRows->groupBy('depth') as $depth => $nodes)
+                <details class="rounded-xl border border-surface-200 bg-white" {{ $depth === 1 ? 'open' : '' }}>
+                    <summary class="cursor-pointer px-4 py-3 font-semibold text-surface-700 flex items-center justify-between">
+                        <span>Level {{ $depth }} Team</span>
+                        <span class="text-xs text-surface-400">{{ $nodes->count() }} members</span>
+                    </summary>
+                    <div class="border-t border-surface-100 px-4 py-3 space-y-3">
+                        @foreach($nodes as $node)
+                            <div class="rounded-lg border border-surface-100 p-3">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="font-semibold text-surface-700">{{ $node['member']['name'] ?? 'Member' }}</p>
+                                        <p class="text-xs text-surface-400">{{ $node['member']['phone'] ?? 'No phone' }}</p>
+                                        <p class="text-xs text-surface-400 mt-1">
+                                            Parent ID: {{ $node['parent_id'] }} · Child ID: {{ $node['child_id'] }} · Joined {{ optional($node['joined_at'])->format('d M Y') }}
+                                        </p>
+                                    </div>
+                                    <div class="flex flex-col gap-1 items-end">
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium {{ ($node['member']['is_active'] ?? false) ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
+                                            {{ ($node['member']['is_active'] ?? false) ? 'Active Member' : 'Inactive Member' }}
+                                        </span>
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium {{ ($node['status'] ?? 'pending') === 'active' ? 'bg-brand-50 text-brand-700' : 'bg-amber-50 text-amber-700' }}">
+                                            Referral {{ ucfirst($node['status'] ?? 'pending') }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </details>
+            @endforeach
+        </div>
+    @endif
+</div>
+
 <div class="card overflow-hidden">
     <div class="px-6 py-4 border-b border-surface-100 font-semibold text-surface-700 flex items-center gap-2">
         <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -77,6 +136,7 @@
                 <tr>
                     <th class="table-header text-left">Friend</th>
                     <th class="table-header text-left">Joined</th>
+                    <th class="table-header text-left">Status</th>
                     <th class="table-header text-left">Signup Reward</th>
                     <th class="table-header text-left">Purchase Reward</th>
                 </tr>
@@ -87,27 +147,18 @@
                     <td class="table-cell font-semibold">{{ $ref->referred->name ?? '—' }}</td>
                     <td class="table-cell text-surface-400">{{ $ref->created_at->format('d M Y') }}</td>
                     <td class="table-cell">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-medium {{ ($ref->referred?->is_active ?? false) ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-rose-50 text-rose-700 ring-1 ring-rose-200' }}">
+                            {{ ($ref->referred?->is_active ?? false) ? 'Active' : 'Inactive' }}
+                        </span>
+                    </td>
+                    <td class="table-cell">
                         <span class="px-2.5 py-1 rounded-full text-xs font-medium {{ $ref->signup_reward_given ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-surface-100 text-surface-400' }}">
-                            @if($ref->signup_reward_given)
-                            <svg class="w-3 h-3 inline -mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                            </svg>
-                            Given
-                            @else
-                            Pending
-                            @endif
+                            @if($ref->signup_reward_given) Given @else Pending @endif
                         </span>
                     </td>
                     <td class="table-cell">
                         <span class="px-2.5 py-1 rounded-full text-xs font-medium {{ $ref->purchase_reward_given ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-surface-100 text-surface-400' }}">
-                            @if($ref->purchase_reward_given)
-                            <svg class="w-3 h-3 inline -mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                            </svg>
-                            Given
-                            @else
-                            Pending
-                            @endif
+                            @if($ref->purchase_reward_given) Given @else Pending @endif
                         </span>
                     </td>
                 </tr>

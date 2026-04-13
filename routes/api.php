@@ -4,12 +4,13 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CheckoutController;
-use App\Http\Controllers\Api\V1\LocationPreferenceController;
+use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReferralController;
 use App\Http\Controllers\Api\V1\WalletController;
+use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\V1\WishlistController as ApiWishlistController;
 use App\Models\District;
 use App\Models\State;
@@ -17,26 +18,29 @@ use Illuminate\Support\Facades\Route;
 
 // Public helper: districts by state (used by location picker)
 Route::get('/districts/{stateId}', function (int $stateId) {
-    return District::where('state_id', $stateId)->orderBy('district_name')->get(['id', 'district_name']);
+    return [
+        'data' => District::where('state_id', $stateId)->orderBy('district_name')->get(['id', 'district_name']),
+    ];
+});
+
+Route::prefix('chatbot')->middleware('throttle:60,1')->group(function (): void {
+    Route::post('/suggestions', [ChatbotController::class, 'suggestions']);
+    Route::post('/track', [ChatbotController::class, 'track']);
 });
 
 Route::prefix('v1')->group(function (): void {
     Route::get('/states', function () {
-        return response()->json([
-            'success' => true,
-            'message' => 'States fetched',
-            'data' => State::orderBy('state_name')->get(['id', 'state_name']),
-            'meta' => [],
-        ]);
+        return [
+            'data' => State::query()
+                ->orderBy('state_name')
+                ->get(['id', 'state_name']),
+        ];
     });
 
     Route::get('/districts/{stateId}', function (int $stateId) {
-        return response()->json([
-            'success' => true,
-            'message' => 'Districts fetched',
+        return [
             'data' => District::where('state_id', $stateId)->orderBy('district_name')->get(['id', 'district_name']),
-            'meta' => [],
-        ]);
+        ];
     });
 
     Route::prefix('auth')->group(function (): void {
@@ -84,6 +88,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/account/wishlist', [ApiWishlistController::class, 'index']);
         Route::post('/account/wishlist/toggle', [ApiWishlistController::class, 'toggle']);
         Route::get('/account/wishlist/check', [ApiWishlistController::class, 'check']);
+
+        Route::post('/account/device-tokens', [DeviceTokenController::class, 'upsert']);
     });
 
     Route::get('/categories', [CatalogController::class, 'categories']);

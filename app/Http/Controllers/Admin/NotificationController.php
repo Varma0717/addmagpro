@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AppNotification;
 use App\Models\User;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    public function __construct(private readonly PushNotificationService $pushNotifications) {}
     public function index()
     {
         $notifications = AppNotification::with('user')->latest()->paginate(30);
@@ -25,25 +27,21 @@ class NotificationController extends Controller
         ]);
 
         if ($request->filled('user_id')) {
-            AppNotification::create([
-                'user_id' => $request->user_id,
-                'title'   => $request->title,
-                'body'    => $request->body,
-                'type'    => $request->type ?? 'general',
-            ]);
+            $user = User::findOrFail((int) $request->user_id);
+            $this->pushNotifications->notifyUser(
+                $user,
+                $request->title,
+                $request->body,
+                $request->type ?? 'offer',
+            );
         } else {
-            // Broadcast to all users
-            User::where('role', 'user')->where('is_active', true)
-                ->chunk(200, function ($users) use ($request) {
-                    foreach ($users as $user) {
-                        AppNotification::create([
-                            'user_id' => $user->id,
-                            'title'   => $request->title,
-                            'body'    => $request->body,
-                            'type'    => $request->type ?? 'general',
-                        ]);
-                    }
-                });
+            $users = User::where('role', 'user')->where('is_active', true)->get();
+            $this->pushNotifications->notifyUsers(
+                $users,
+                $request->title,
+                $request->body,
+                $request->type ?? 'offer',
+            );
         }
 
         return back()->with('success', 'Notification sent.');
