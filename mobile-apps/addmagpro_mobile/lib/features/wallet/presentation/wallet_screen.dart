@@ -214,6 +214,14 @@ class _WalletScreenState extends State<WalletScreen> {
     }
   }
 
+  double _totalCredits(WalletOverview wallet) {
+    return wallet.transactions.where((t) => t.isCredit).fold(0.0, (sum, t) => sum + t.amount);
+  }
+
+  double _totalDebits(WalletOverview wallet) {
+    return wallet.transactions.where((t) => !t.isCredit).fold(0.0, (sum, t) => sum + t.amount);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -255,17 +263,39 @@ class _WalletScreenState extends State<WalletScreen> {
                 Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 42,
+                      height: 42,
                       decoration: BoxDecoration(color: Colors.white.withAlpha(25), borderRadius: BorderRadius.circular(12)),
                       child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 22),
                     ),
                     const SizedBox(width: 12),
-                    const Text('Wallet Balance', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    const Text('Available Balance', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.white.withAlpha(20), borderRadius: BorderRadius.circular(8)),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.verified_rounded, color: Colors.greenAccent, size: 14),
+                          SizedBox(width: 4),
+                          Text('Active', style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
+                const SizedBox(height: 20),
+                Text('₹${wallet.balance.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 38)),
                 const SizedBox(height: 16),
-                Text('₹${wallet.balance.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 36)),
+                // Quick stats
+                Row(
+                  children: [
+                    _BalanceStat(label: 'Credited', value: '₹${_totalCredits(wallet).toStringAsFixed(0)}', icon: Icons.south_west_rounded, iconColor: Colors.greenAccent),
+                    const SizedBox(width: 16),
+                    _BalanceStat(label: 'Debited', value: '₹${_totalDebits(wallet).toStringAsFixed(0)}', icon: Icons.north_east_rounded, iconColor: Colors.redAccent),
+                  ],
+                ),
               ],
             ),
           ),
@@ -412,6 +442,40 @@ class _WithdrawCard extends StatelessWidget {
           ),
           StatusChip(label: item.status),
         ],
+      ),
+    );
+  }
+}
+
+class _BalanceStat extends StatelessWidget {
+  const _BalanceStat({required this.label, required this.value, required this.icon, required this.iconColor});
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 16),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+                Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import '../../../core/config/app_config.dart';
+
 class HomeFeed {
   HomeFeed({
     required this.banners,
@@ -68,7 +70,7 @@ class HomeBannerItem {
       id: _toInt(json['id']) ?? 0,
       title: json['title'] as String?,
       subtitle: json['subtitle'] as String?,
-      imageUrl: json['image_url'] as String?,
+      imageUrl: AppConfig.resolveImageUrl(json['image_url'] as String?),
       linkType: json['link_type'] as String?,
       linkValue: json['link_value'] as String?,
     );
@@ -96,7 +98,7 @@ class HomeCategoryItem {
       name: (json['name'] as String?) ?? '-',
       slug: (json['slug'] as String?) ?? '',
       type: (json['type'] as String?) ?? '',
-      imageUrl: json['image_url'] as String?,
+      imageUrl: AppConfig.resolveImageUrl(json['image_url'] as String?),
     );
   }
 }
@@ -128,7 +130,7 @@ class HomeProductItem {
       effectivePrice: _toDouble(json['effective_price']) ?? 0,
       ratingAvg: _toDouble(json['rating_avg']),
       category: json['category'] as String?,
-      primaryImageUrl: json['primary_image_url'] as String?,
+      primaryImageUrl: AppConfig.resolveImageUrl(json['primary_image_url'] as String?),
     );
   }
 }
@@ -160,7 +162,7 @@ class HomeListingItem {
       city: json['city'] as String?,
       category: json['category'] as String?,
       ratingAvg: _toDouble(json['rating_avg']),
-      primaryImageUrl: json['primary_image_url'] as String?,
+      primaryImageUrl: AppConfig.resolveImageUrl(json['primary_image_url'] as String?),
     );
   }
 }

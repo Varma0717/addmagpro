@@ -1,3 +1,5 @@
+import '../../../core/config/app_config.dart';
+
 enum ProductSortOption {
   latest('latest', 'Latest'),
   priceAsc('price_asc', 'Price: Low to High'),
@@ -127,7 +129,7 @@ class ProductListItem {
       name: (json['name'] as String?) ?? '-',
       slug: (json['slug'] as String?) ?? '',
       effectivePrice: _toDouble(json['effective_price']) ?? 0,
-      primaryImageUrl: json['primary_image_url'] as String?,
+      primaryImageUrl: AppConfig.resolveImageUrl(json['primary_image_url'] as String?),
       ratingAvg: _toDouble(json['rating_avg']),
       brandId: _toInt(json['brand_id']) ?? (brand is Map<String, dynamic> ? _toInt(brand['id']) : null),
       brandName: json['brand_name'] as String? ?? (brand is Map<String, dynamic> ? brand['name'] as String? : null),
@@ -195,7 +197,7 @@ class ProductDetail {
       images: images is List
           ? images
               .whereType<Map<String, dynamic>>()
-              .map((e) => e['image_url'] as String?)
+              .map((e) => AppConfig.resolveImageUrl(e['image_url'] as String?))
               .whereType<String>()
               .toList(growable: false)
           : <String>[],
@@ -259,7 +261,7 @@ class ListingListItem {
       slug: (json['slug'] as String?) ?? '',
       city: json['city'] as String?,
       ratingAvg: _toDouble(json['rating_avg']),
-      primaryImageUrl: json['primary_image_url'] as String?,
+      primaryImageUrl: AppConfig.resolveImageUrl(json['primary_image_url'] as String?),
       categoryName: category is Map<String, dynamic> ? category['name'] as String? : null,
     );
   }
@@ -309,7 +311,7 @@ class ListingDetail {
       images: images is List
           ? images
               .whereType<Map<String, dynamic>>()
-              .map((e) => e['image_url'] as String?)
+              .map((e) => AppConfig.resolveImageUrl(e['image_url'] as String?))
               .whereType<String>()
               .toList(growable: false)
           : <String>[],

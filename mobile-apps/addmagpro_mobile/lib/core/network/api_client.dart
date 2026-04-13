@@ -26,6 +26,27 @@ class ApiClient {
     return _decode(response);
   }
 
+  Future<Map<String, dynamic>> multipartPost(
+    String path, {
+    Map<String, String> fields = const {},
+    Map<String, String> filePaths = const {},
+    String? bearerToken,
+  }) async {
+    final request = http.MultipartRequest('POST', _uri(path));
+    request.headers.addAll(<String, String>{
+      'Accept': 'application/json',
+      if (bearerToken != null && bearerToken.isNotEmpty)
+        'Authorization': 'Bearer $bearerToken',
+    });
+    request.fields.addAll(fields);
+    for (final entry in filePaths.entries) {
+      request.files.add(await http.MultipartFile.fromPath(entry.key, entry.value));
+    }
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    return _decode(response);
+  }
+
   Future<Map<String, dynamic>> get(
     String path, {
     String? bearerToken,

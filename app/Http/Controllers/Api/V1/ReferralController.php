@@ -92,84 +92,16 @@ class ReferralController extends Controller
         $user = $request->user();
         $depth = min(max((int) $request->integer('depth', 3), 1), 5);
 
-        $team = Referral::query()
-            ->where('referrer_id', $user->id)
-            ->with('referred:id,name,phone,avatar,is_active')
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString();
+        $teamInsights = $this->buildTeamInsights($user);
 
-            $teamRows = $teamRows->merge($levelRows->map(function (Referral $member) use ($level): array {
-                return [
-                    'id' => $member->id,
-                    'level' => $level,
-                    'status' => $member->status,
-                    'signup_reward_given' => $member->signup_reward_given,
-                    'purchase_reward_given' => $member->purchase_reward_given,
-                    'joined_at' => $member->created_at,
-                    'parent_user_id' => $member->referrer_id,
-                    'child_user_id' => $member->referred_id,
-                    'member' => [
-                        'id' => $member->referred?->id,
-                        'name' => $member->referred?->name,
-                        'phone' => $member->referred?->phone,
-                        'is_active' => (bool) ($member->referred?->is_active ?? false),
-                        'avatar_url' => $member->referred?->avatar ? imageUrl($member->referred->avatar) : null,
-                    ],
-                    'parent_id' => $member->referrer_id,
-                    'child_id' => $member->referred_id,
-                    'depth' => 1,
-                ];
-            }));
-
-            $parentIds = $levelRows->pluck('referred_id')->filter()->unique()->values();
-
-            if ($parentIds->isEmpty()) {
-                break;
-            }
-        }
-
-        $referralIds = $teamRows->pluck('id')->all();
-        $referralEarningMap = empty($referralIds)
-            ? []
-            : DB::table('wallet_transactions')
-                ->select('reference_id', DB::raw('SUM(amount) as total'))
-                ->where('user_id', $user->id)
-                ->where('type', 'credit')
-                ->where('reference_type', 'referrals')
-                ->whereIn('reference_id', $referralIds)
-                ->groupBy('reference_id')
-                ->pluck('total', 'reference_id')
-                ->map(fn ($value) => round((float) $value, 2))
-                ->all();
-
-        $teamRows = $teamRows->map(function (array $row) use ($referralEarningMap): array {
-            $row['earning'] = $referralEarningMap[$row['id']] ?? 0.0;
-            return $row;
-        })->values();
-
-        $levels = collect(range(1, $depth))
-            ->map(function (int $level) use ($teamRows): array {
-                $rows = $teamRows->where('level', $level);
-                return [
-                    'level' => $level,
-                    'count' => $rows->count(),
-                    'earnings' => round((float) $rows->sum('earning'), 2),
-                ];
-            })
-            ->values();
-
-        $parentChildMap = $teamRows
-            ->groupBy(fn (array $row) => (string) $row['parent_user_id'])
-            ->map(fn ($rows) => $rows->pluck('child_user_id')->values())
-            ->all();
+        $teamStructure = collect($teamInsights['team_structure']);
+        $levelSummary = $teamInsights['level_summary'];
 
         return $this->success([
+            'team_structure' => $teamStructure->values(),
+            'level_summary' => $levelSummary,
             'depth' => $depth,
-            'levels' => $levels,
-            'total_team' => $teamRows->count(),
-            'members' => $teamRows,
-            'parent_child_map' => $parentChildMap,
+            'total_team' => $teamStructure->count(),
         ], 'Referral team fetched');
     }
 
@@ -244,7 +176,7 @@ class ReferralController extends Controller
                 $activeCount = $levelRows->where('member.is_active', true)->count();
                 $inactiveCount = $memberCount - $activeCount;
                 $earnings = $levelRows->sum(
-                    fn (array $row): float => (float) ($creditByReferralId[$row['id']] ?? 0)
+                    fn(array $row): float => (float) ($creditByReferralId[$row['id']] ?? 0)
                 );
 
                 return [

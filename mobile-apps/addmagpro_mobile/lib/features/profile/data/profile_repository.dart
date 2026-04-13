@@ -12,16 +12,32 @@ class ProfileRepository {
     required String name,
     String? phone,
     String? email,
+    String? avatarPath,
   }) async {
-    final payload = await _apiClient.post(
-      '/account/profile',
-      bearerToken: token,
-      body: <String, dynamic>{
-        'name': name,
-        'phone': (phone ?? '').trim().isEmpty ? null : phone,
-        'email': (email ?? '').trim().isEmpty ? null : email,
-      },
-    );
+    late final Map<String, dynamic> payload;
+
+    if (avatarPath != null && avatarPath.isNotEmpty) {
+      payload = await _apiClient.multipartPost(
+        '/account/profile',
+        bearerToken: token,
+        fields: <String, String>{
+          'name': name,
+          if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+          if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
+        },
+        filePaths: <String, String>{'avatar': avatarPath},
+      );
+    } else {
+      payload = await _apiClient.post(
+        '/account/profile',
+        bearerToken: token,
+        body: <String, dynamic>{
+          'name': name,
+          'phone': (phone ?? '').trim().isEmpty ? null : phone,
+          'email': (email ?? '').trim().isEmpty ? null : email,
+        },
+      );
+    }
 
     final data = payload['data'];
     if (data is! Map<String, dynamic>) {

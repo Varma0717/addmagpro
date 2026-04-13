@@ -341,34 +341,9 @@ class _DashboardViewState extends State<_DashboardView> {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(20),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              if (banner.imageUrl != null && banner.imageUrl!.isNotEmpty)
-                                CachedNetworkImage(imageUrl: banner.imageUrl!, fit: BoxFit.cover, errorWidget: (_, _, _) => _bannerPlaceholder(banner))
-                              else
-                                _bannerPlaceholder(banner),
-                              Positioned(
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withAlpha(160)]),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (banner.title != null) Text(banner.title!, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
-                                      if (banner.subtitle != null) Text(banner.subtitle!, style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 12)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          child: (banner.imageUrl != null && banner.imageUrl!.isNotEmpty)
+                              ? CachedNetworkImage(imageUrl: banner.imageUrl!, fit: BoxFit.cover, errorWidget: (_, _, _) => _bannerPlaceholder())
+                              : _bannerPlaceholder(),
                         ),
                       );
                     },
@@ -542,12 +517,11 @@ class _DashboardViewState extends State<_DashboardView> {
     );
   }
 
-  Widget _bannerPlaceholder(HomeBannerItem banner) {
+  Widget _bannerPlaceholder() {
     return Container(
       decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
       alignment: Alignment.center,
-      padding: const EdgeInsets.all(20),
-      child: Text(banner.title ?? 'AddMagPro', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+      child: const Icon(Icons.image_rounded, color: Colors.white54, size: 48),
     );
   }
 
