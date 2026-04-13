@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../data/referral_repository.dart';
 import '../models/referral_models.dart';
 
@@ -85,6 +86,13 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Referral Network')),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
     if (_loading) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
@@ -128,6 +136,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // ── Referral Header Card ──
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -144,57 +153,83 @@ class _ReferralScreenState extends State<ReferralScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Grow your team',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${widget.memberName}, share your referral code and track joining rewards.',
-                  style: const TextStyle(color: Colors.white70, height: 1.4),
-                ),
-                const SizedBox(height: 18),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(color: Colors.white.withAlpha(25), borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.groups_2_rounded, color: Colors.white, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Your referral code',
-                            style: TextStyle(
-                              color: AppColors.textMuted,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
+                          const Text('Grow your team', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 2),
                           Text(
-                            data.referralCode,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.2,
-                            ),
+                            '${widget.memberName}, share & earn rewards',
+                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
-                      FilledButton.tonal(
-                        onPressed: _copyCode,
-                        child: const Text('Copy'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    _BalanceStat(label: 'Referrals', value: '${data.totalReferrals}', icon: Icons.people_rounded, iconColor: Colors.white),
+                    const SizedBox(width: 12),
+                    _BalanceStat(label: 'Earnings', value: '₹${data.totalEarnings.toStringAsFixed(0)}', icon: Icons.currency_rupee_rounded, iconColor: Colors.greenAccent),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _BalanceStat(label: 'Active', value: '${data.activeReferrals}', icon: Icons.check_circle_rounded, iconColor: Colors.greenAccent),
+                    const SizedBox(width: 12),
+                    _BalanceStat(label: 'Inactive', value: '${data.inactiveReferrals}', icon: Icons.cancel_rounded, iconColor: Colors.redAccent),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Referral Code Card ──
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Your referral code', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        data.referralCode,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                    FilledButton.tonal(
+                      onPressed: _copyCode,
+                      child: const Text('Copy'),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 14),
                 Row(
@@ -205,73 +240,35 @@ class _ReferralScreenState extends State<ReferralScreen> {
                         icon: const Icon(Icons.chat_rounded, size: 18),
                         label: const Text('WhatsApp'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: BorderSide(color: Colors.white.withAlpha(100)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           minimumSize: const Size(0, 44),
                         ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: FilledButton.icon(
                         onPressed: _shareCode,
                         icon: const Icon(Icons.share_rounded, size: 18),
                         label: const Text('Share'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: BorderSide(color: Colors.white.withAlpha(100)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                        style: FilledButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           minimumSize: const Size(0, 44),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _SummaryCard(
-                        label: 'Referrals',
-                        value: '${data.totalReferrals}',
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _SummaryCard(
-                        label: 'Earnings',
-                        value: '₹${data.totalEarnings.toStringAsFixed(0)}',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: _SummaryCard(label: 'Active', value: '${data.activeReferrals}')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _SummaryCard(label: 'Inactive', value: '${data.inactiveReferrals}')),
-                  ],
-                ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _TeamStructureCard(summary: TeamStructureSummary.fromNodes(data.teamStructure)),
           const SizedBox(height: 20),
-          const Text(
-            'Team Structure',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          // ── Team Structure ──
+          SectionHeader(title: 'Team Structure', padding: EdgeInsets.zero),
           const SizedBox(height: 10),
           if (grouped.isEmpty)
             const Padding(
@@ -298,25 +295,15 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 .map((entry) => _LevelGroupCard(level: entry.key, nodes: entry.value)),
           ],
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Referral History',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Text(
-                '${data.referrals.length} members',
-                style: const TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 12,
-                ),
-              ),
-            ],
+          // ── Referral History ──
+          SectionHeader(title: 'Referral History', padding: EdgeInsets.zero),
+          const SizedBox(height: 4),
+          Text(
+            '${data.referrals.length} members',
+            style: const TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 12),
           if (data.referrals.isEmpty)
@@ -418,39 +405,6 @@ class _TeamStructureCard extends StatelessWidget {
                 ),
               ),
             ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 20,
-            ),
-          ),
         ],
       ),
     );
@@ -708,6 +662,40 @@ class _ReferralCard extends StatelessWidget {
     if (value == null) return '-';
     final local = value.toLocal();
     return '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
+  }
+}
+
+class _BalanceStat extends StatelessWidget {
+  const _BalanceStat({required this.label, required this.value, required this.icon, required this.iconColor});
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(25),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 16),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
