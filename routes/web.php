@@ -59,12 +59,16 @@ Route::middleware('auth')->prefix('checkout')->name('checkout.')->group(function
 // Account panel (auth required)
 Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
     Route::get('/', [Account\ExecutiveController::class, 'dashboard'])->name('index');
-    Route::get('/generate-coupons', [Account\ExecutiveController::class, 'generateCoupons'])->name('coupons.index');
-    Route::post('/generate-coupons', [Account\ExecutiveController::class, 'storeGeneratedCoupon'])->name('coupons.store');
+    Route::get('/coupons', [Account\CouponController::class, 'index'])->name('coupons.index');
+    Route::post('/coupons/generate', [Account\CouponController::class, 'store'])->name('coupons.store');
+    Route::get('/generate-coupons', fn() => redirect()->route('account.coupons.index'));
     Route::get('/team-details', [Account\ExecutiveController::class, 'teamDetails'])->name('team.index');
     Route::get('/discount-shop-orders', [Account\ExecutiveController::class, 'discountShopOrders'])->name('discount-orders.index');
     Route::get('/discount-customer-payments', [Account\ExecutiveController::class, 'discountStoreCustomerPayments'])->name('discount-payments.index');
     Route::post('/withdraw', [Account\ExecutiveController::class, 'requestWithdraw'])->name('withdraw.store');
+    Route::get('/transactions', [Account\WalletController::class, 'transactions'])->name('transactions.index');
+    Route::get('/settings', [Account\SettingsController::class, 'index'])->name('settings.index');
+    Route::get('/support', [Account\SupportController::class, 'index'])->name('support.index');
     Route::get('/profile', [Account\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [Account\ProfileController::class, 'update'])->name('profile.update');
     Route::get('/orders', [Account\OrderController::class, 'index'])->name('orders.index');
