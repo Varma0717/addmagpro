@@ -24,7 +24,10 @@ class NotificationController extends Controller
             'body'    => 'required|string',
             'type'    => 'nullable|string|max:50',
             'user_id' => 'nullable|exists:users,id',
+            'send_push' => 'nullable|boolean',
         ]);
+
+        $sendPush = $request->boolean('send_push', false);
 
         if ($request->filled('user_id')) {
             $user = User::findOrFail((int) $request->user_id);
@@ -33,6 +36,8 @@ class NotificationController extends Controller
                 $request->title,
                 $request->body,
                 $request->type ?? 'offer',
+                [],
+                $sendPush,
             );
         } else {
             $users = User::where('role', 'user')->where('is_active', true)->get();
@@ -41,9 +46,11 @@ class NotificationController extends Controller
                 $request->title,
                 $request->body,
                 $request->type ?? 'offer',
+                [],
+                $sendPush,
             );
         }
 
-        return back()->with('success', 'Notification sent.');
+        return back()->with('success', $sendPush ? 'Notification + push sent.' : 'Notification sent.');
     }
 }

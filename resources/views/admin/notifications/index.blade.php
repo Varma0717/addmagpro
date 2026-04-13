@@ -64,6 +64,15 @@
                 <textarea name="body" rows="3" required class="input w-full">{{ old('body') }}</textarea>
             </div>
 
+
+            <div class="rounded-lg border border-surface-200 bg-surface-50 px-3 py-2">
+                <label class="inline-flex items-center gap-2 text-sm text-surface-700">
+                    <input type="checkbox" name="send_push" value="1" @checked(old('send_push', 0)) class="rounded border-surface-300 text-brand-500 focus:ring-brand-500">
+                    <span>Also send as push notification</span>
+                </label>
+                <p class="text-xs text-surface-500 mt-1">Unchecked = save only to in-app notifications feed.</p>
+            </div>
+
             <button type="submit" class="btn-primary w-full justify-center">Send Notification</button>
         </form>
     </div>

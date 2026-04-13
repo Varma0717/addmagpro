@@ -24,7 +24,7 @@ class PushNotificationService
         );
     }
 
-    public function notifyUsers(iterable $users, string $title, string $body, string $type = 'general', array $data = []): void
+    public function notifyUsers(iterable $users, string $title, string $body, string $type = 'general', array $data = [], bool $dispatchPush = true): void
     {
         $collection = $users instanceof Collection ? $users : collect($users);
         if ($collection->isEmpty()) {
@@ -42,6 +42,10 @@ class PushNotificationService
         ]);
 
         AppNotification::insert($notifications->all());
+
+        if (!$dispatchPush) {
+            return;
+        }
 
         $tokens = UserDeviceToken::query()
             ->whereIn('user_id', $collection->pluck('id')->all())
@@ -103,8 +107,8 @@ class PushNotificationService
         }
     }
 
-    public function notifyUser(User $user, string $title, string $body, string $type = 'general', array $data = []): void
+    public function notifyUser(User $user, string $title, string $body, string $type = 'general', array $data = [], bool $dispatchPush = true): void
     {
-        $this->notifyUsers([$user], $title, $body, $type, $data);
+        $this->notifyUsers([$user], $title, $body, $type, $data, $dispatchPush);
     }
 }

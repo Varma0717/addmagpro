@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'app_state.dart';
 import 'core/config/app_config.dart';
 import 'core/network/api_client.dart';
-import 'core/notifications/push_notification_service.dart';
+import 'core/notifications/push_service.dart';
 import 'core/storage/secure_storage_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/data/auth_repository.dart';
@@ -12,6 +12,8 @@ import 'features/auth/presentation/login_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/notifications/presentation/notifications_screen.dart';
 import 'features/orders/presentation/orders_screen.dart';
+import 'features/referral/presentation/referral_screen.dart';
+import 'features/wallet/presentation/wallet_screen.dart';
 
 class AddMagProApp extends StatefulWidget {
   const AddMagProApp({super.key});
@@ -22,7 +24,7 @@ class AddMagProApp extends StatefulWidget {
 
 class _AddMagProAppState extends State<AddMagProApp> {
   late final AppState _appState;
-  late final PushNotificationService _pushNotificationService;
+  late final PushService _pushService;
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   String? _lastAuthToken;
 
@@ -42,12 +44,12 @@ class _AddMagProAppState extends State<AddMagProApp> {
     );
 
     _appState = AppState(authRepository);
-    _pushNotificationService = PushNotificationService(apiClient: apiClient);
+    _pushService = PushService(apiClient: apiClient);
 
     _appState.addListener(_onAppStateChanged);
     _appState.initialize();
 
-    _pushNotificationService.initialize(
+    _pushService.initialize(
       authTokenProvider: () => _appState.token,
       onRouteRequested: _handleNotificationRoute,
     );
@@ -66,25 +68,37 @@ class _AddMagProAppState extends State<AddMagProApp> {
     }
 
     _lastAuthToken = token;
-    _pushNotificationService.registerOrUpdateToken(authTokenProvider: () => _appState.token);
+    _pushService.registerOrUpdateToken(authTokenProvider: () => _appState.token);
   }
 
-  void _handleNotificationRoute(Map<String, dynamic> data) {
+  void _handleNotificationRoute(NotificationDestination destination, Map<String, dynamic> data) {
     final token = _appState.token;
     if (token == null || token.isEmpty) return;
-
-    final type = (data['type'] ?? '').toString().toLowerCase();
-    final event = (data['event'] ?? '').toString().toLowerCase();
 
     final navigator = _navigatorKey.currentState;
     if (navigator == null) return;
 
-    if (type == 'order' || event.startsWith('order_')) {
-      navigator.push(MaterialPageRoute<void>(builder: (_) => OrdersScreen(token: token)));
-      return;
+    switch (destination) {
+      case NotificationDestination.orders:
+        navigator.push(MaterialPageRoute<void>(builder: (_) => OrdersScreen(token: token)));
+        break;
+      case NotificationDestination.wallet:
+        navigator.push(MaterialPageRoute<void>(builder: (_) => WalletScreen(token: token)));
+        break;
+      case NotificationDestination.referrals:
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => ReferralScreen(
+              token: token,
+              memberName: _appState.currentUser?.name ?? 'Member',
+            ),
+          ),
+        );
+        break;
+      case NotificationDestination.notifications:
+        navigator.push(MaterialPageRoute<void>(builder: (_) => NotificationsScreen(token: token)));
+        break;
     }
-
-    navigator.push(MaterialPageRoute<void>(builder: (_) => NotificationsScreen(token: token)));
   }
 
   @override

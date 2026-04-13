@@ -5,12 +5,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../network/api_client.dart';
+import '../storage/secure_storage_service.dart';
 
 typedef AuthTokenProvider = String? Function();
-typedef NotificationRouteHandler = void Function(Map<String, dynamic> data);
+typedef PushRouteHandler = void Function(NotificationDestination destination, Map<String, dynamic> data);
 
-class PushNotificationService {
-  PushNotificationService({required ApiClient apiClient}) : _apiClient = apiClient;
+enum NotificationDestination { orders, wallet, referrals, notifications }
+
+class PushService {
+  PushService({
+    required ApiClient apiClient,
+    SecureStorageService? storage,
+  })  : _apiClient = apiClient,
+        _storage = storage ?? SecureStorageService();
 
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'addmagpro_high_importance',
@@ -20,6 +27,7 @@ class PushNotificationService {
   );
 
   final ApiClient _apiClient;
+  final SecureStorageService _storage;
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
@@ -27,7 +35,7 @@ class PushNotificationService {
 
   Future<void> initialize({
     required AuthTokenProvider authTokenProvider,
-    required NotificationRouteHandler onRouteRequested,
+    required PushRouteHandler onRouteRequested,
   }) async {
     if (_isInitialized) return;
 
@@ -39,12 +47,12 @@ class PushNotificationService {
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      onRouteRequested(message.data);
+      onRouteRequested(_destinationForPayload(message.data), message.data);
     });
 
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      onRouteRequested(initialMessage.data);
+      onRouteRequested(_destinationForPayload(initialMessage.data), initialMessage.data);
     }
 
     _messaging.onTokenRefresh.listen((token) async {
@@ -67,6 +75,9 @@ class PushNotificationService {
     final fcmToken = token ?? await _messaging.getToken();
     if (fcmToken == null || fcmToken.isEmpty) return;
 
+    final previousToken = await _storage.readFcmToken();
+    if (previousToken == fcmToken) return;
+
     try {
       await _apiClient.post(
         '/account/device-tokens',
@@ -77,9 +88,30 @@ class PushNotificationService {
           'device_name': 'addmagpro-mobile',
         },
       );
+      await _storage.writeFcmToken(fcmToken);
     } catch (_) {
       // Best-effort registration; ignore if backend is temporarily unavailable.
     }
+  }
+
+  NotificationDestination _destinationForPayload(Map<String, dynamic> data) {
+    final type = (data['type'] ?? '').toString().toLowerCase();
+    final event = (data['event'] ?? '').toString().toLowerCase();
+    final screen = (data['screen'] ?? data['target'] ?? '').toString().toLowerCase();
+
+    if (type == 'order' || event.startsWith('order_') || screen == 'orders') {
+      return NotificationDestination.orders;
+    }
+
+    if (type == 'wallet' || event.startsWith('wallet_') || screen == 'wallet') {
+      return NotificationDestination.wallet;
+    }
+
+    if (type == 'referral' || type == 'referrals' || event.startsWith('referral_') || screen == 'referrals') {
+      return NotificationDestination.referrals;
+    }
+
+    return NotificationDestination.notifications;
   }
 
   Future<void> _requestPermissions() async {
@@ -94,7 +126,7 @@ class PushNotificationService {
     );
   }
 
-  Future<void> _initLocalNotifications(NotificationRouteHandler onRouteRequested) async {
+  Future<void> _initLocalNotifications(PushRouteHandler onRouteRequested) async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -109,7 +141,7 @@ class PushNotificationService {
         if (payload == null || payload.isEmpty) return;
         final decoded = jsonDecode(payload);
         if (decoded is Map<String, dynamic>) {
-          onRouteRequested(decoded);
+          onRouteRequested(_destinationForPayload(decoded), decoded);
         }
       },
     );
