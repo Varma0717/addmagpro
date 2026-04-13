@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Referral;
 use App\Support\ApiResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class ReferralController extends Controller
@@ -69,21 +70,32 @@ class ReferralController extends Controller
     public function team(Request $request)
     {
         $user = $request->user();
-        $perPage = min((int) $request->integer('per_page', 20), 50);
+        $depth = min(max((int) $request->integer('depth', 3), 1), 5);
 
-        $team = Referral::query()
-            ->where('referrer_id', $user->id)
-            ->with('referred:id,name,phone,avatar')
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString();
+        $teamRows = collect();
+        $parentIds = collect([$user->id]);
 
-        return $this->success(
-            $team->getCollection()->map(function (Referral $member): array {
+        for ($level = 1; $level <= $depth; $level++) {
+            $levelRows = Referral::query()
+                ->whereIn('referrer_id', $parentIds->all())
+                ->with('referred:id,name,phone,avatar')
+                ->latest()
+                ->get();
+
+            if ($levelRows->isEmpty()) {
+                break;
+            }
+
+            $teamRows = $teamRows->merge($levelRows->map(function (Referral $member) use ($level): array {
                 return [
                     'id' => $member->id,
+                    'level' => $level,
                     'status' => $member->status,
+                    'signup_reward_given' => $member->signup_reward_given,
+                    'purchase_reward_given' => $member->purchase_reward_given,
                     'joined_at' => $member->created_at,
+                    'parent_user_id' => $member->referrer_id,
+                    'child_user_id' => $member->referred_id,
                     'member' => [
                         'id' => $member->referred?->id,
                         'name' => $member->referred?->name,
@@ -91,17 +103,56 @@ class ReferralController extends Controller
                         'avatar_url' => $member->referred?->avatar ? imageUrl($member->referred->avatar) : null,
                     ],
                 ];
-            })->values(),
-            'Referral team fetched',
-            200,
-            [
-                'pagination' => [
-                    'current_page' => $team->currentPage(),
-                    'last_page' => $team->lastPage(),
-                    'per_page' => $team->perPage(),
-                    'total' => $team->total(),
-                ],
-            ]
-        );
+            }));
+
+            $parentIds = $levelRows->pluck('referred_id')->filter()->unique()->values();
+
+            if ($parentIds->isEmpty()) {
+                break;
+            }
+        }
+
+        $referralIds = $teamRows->pluck('id')->all();
+        $referralEarningMap = empty($referralIds)
+            ? []
+            : DB::table('wallet_transactions')
+                ->select('reference_id', DB::raw('SUM(amount) as total'))
+                ->where('user_id', $user->id)
+                ->where('type', 'credit')
+                ->where('reference_type', 'referrals')
+                ->whereIn('reference_id', $referralIds)
+                ->groupBy('reference_id')
+                ->pluck('total', 'reference_id')
+                ->map(fn ($value) => round((float) $value, 2))
+                ->all();
+
+        $teamRows = $teamRows->map(function (array $row) use ($referralEarningMap): array {
+            $row['earning'] = $referralEarningMap[$row['id']] ?? 0.0;
+            return $row;
+        })->values();
+
+        $levels = collect(range(1, $depth))
+            ->map(function (int $level) use ($teamRows): array {
+                $rows = $teamRows->where('level', $level);
+                return [
+                    'level' => $level,
+                    'count' => $rows->count(),
+                    'earnings' => round((float) $rows->sum('earning'), 2),
+                ];
+            })
+            ->values();
+
+        $parentChildMap = $teamRows
+            ->groupBy(fn (array $row) => (string) $row['parent_user_id'])
+            ->map(fn ($rows) => $rows->pluck('child_user_id')->values())
+            ->all();
+
+        return $this->success([
+            'depth' => $depth,
+            'levels' => $levels,
+            'total_team' => $teamRows->count(),
+            'members' => $teamRows,
+            'parent_child_map' => $parentChildMap,
+        ], 'Referral team fetched');
     }
 }

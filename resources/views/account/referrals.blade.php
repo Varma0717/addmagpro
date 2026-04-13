@@ -55,6 +55,64 @@
     </div>
 </div>
 
+{{-- Team Levels & Hierarchy --}}
+<div class="card p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-semibold text-surface-800">Team by Levels (L1–L3)</h3>
+        <span class="text-xs text-surface-400">{{ $teamRows->count() }} team members</span>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+        @foreach($levelStats as $key => $level)
+        <div class="rounded-xl border border-surface-200 p-4 bg-surface-50/70">
+            <p class="text-xs font-semibold text-brand-600">{{ $key }}</p>
+            <p class="text-2xl font-bold text-surface-800 mt-1">{{ $level['count'] }}</p>
+            <p class="text-xs text-surface-500 mt-1">Members</p>
+            <p class="text-sm font-semibold text-emerald-600 mt-2">₹{{ number_format($level['earnings'], 2) }}</p>
+            <p class="text-xs text-surface-500">Earnings</p>
+        </div>
+        @endforeach
+    </div>
+
+    @if($teamRows->isEmpty())
+    <p class="text-sm text-surface-400">No team hierarchy available yet.</p>
+    @else
+    <details class="group rounded-xl border border-surface-200 overflow-hidden">
+        <summary class="cursor-pointer list-none flex items-center justify-between px-4 py-3 bg-surface-50">
+            <span class="font-medium text-surface-700">Expand Team Hierarchy</span>
+            <span class="text-xs text-surface-400 group-open:hidden">Show</span>
+            <span class="text-xs text-surface-400 hidden group-open:inline">Hide</span>
+        </summary>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr>
+                        <th class="table-header text-left">Level</th>
+                        <th class="table-header text-left">Member</th>
+                        <th class="table-header text-left">Parent User ID</th>
+                        <th class="table-header text-left">Joined</th>
+                        <th class="table-header text-left">Earnings</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-surface-100">
+                    @foreach($teamRows as $teamMember)
+                    <tr>
+                        <td class="table-cell">
+                            <span class="px-2 py-1 rounded-lg bg-brand-50 text-brand-700 text-xs font-semibold">L{{ $teamMember['level'] }}</span>
+                        </td>
+                        <td class="table-cell font-semibold">{{ $teamMember['member']->name ?? '—' }}</td>
+                        <td class="table-cell text-surface-500">{{ $teamMember['parent_user_id'] }}</td>
+                        <td class="table-cell text-surface-400">{{ optional($teamMember['joined_at'])->format('d M Y') }}</td>
+                        <td class="table-cell font-semibold text-emerald-600">₹{{ number_format($teamMember['earning'], 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </details>
+    @endif
+</div>
+
 {{-- Referrals List --}}
 <div class="card overflow-hidden">
     <div class="px-6 py-4 border-b border-surface-100 font-semibold text-surface-700 flex items-center gap-2">

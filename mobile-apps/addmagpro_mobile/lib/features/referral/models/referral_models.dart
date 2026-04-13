@@ -6,6 +6,7 @@ class ReferralResponse {
     required this.shareUrl,
     required this.whatsappUrl,
     required this.referrals,
+    this.team,
   });
 
   final String referralCode;
@@ -14,8 +15,12 @@ class ReferralResponse {
   final String shareUrl;
   final String whatsappUrl;
   final List<ReferralItem> referrals;
+  final ReferralTeamResponse? team;
 
-  factory ReferralResponse.fromJson(Map<String, dynamic> json) {
+  factory ReferralResponse.fromJson(
+    Map<String, dynamic> json, {
+    ReferralTeamResponse? team,
+  }) {
     final summary = json['summary'] as Map<String, dynamic>? ?? <String, dynamic>{};
     final share = json['share'] as Map<String, dynamic>? ?? <String, dynamic>{};
     final items = (json['referrals'] as List<dynamic>? ?? <dynamic>[])
@@ -30,6 +35,111 @@ class ReferralResponse {
       shareUrl: share['share_url'] as String? ?? '',
       whatsappUrl: share['whatsapp_url'] as String? ?? '',
       referrals: items,
+      team: team,
+    );
+  }
+}
+
+class ReferralTeamResponse {
+  const ReferralTeamResponse({
+    required this.depth,
+    required this.totalTeam,
+    required this.levels,
+    required this.members,
+    required this.parentChildMap,
+  });
+
+  final int depth;
+  final int totalTeam;
+  final List<ReferralLevelStat> levels;
+  final List<ReferralTeamMember> members;
+  final Map<int, List<int>> parentChildMap;
+
+  factory ReferralTeamResponse.fromJson(Map<String, dynamic> json) {
+    final levels = (json['levels'] as List<dynamic>? ?? <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(ReferralLevelStat.fromJson)
+        .toList();
+    final members = (json['members'] as List<dynamic>? ?? <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(ReferralTeamMember.fromJson)
+        .toList();
+    final rawMap = json['parent_child_map'] as Map<String, dynamic>? ?? <String, dynamic>{};
+    final parentChildMap = <int, List<int>>{};
+
+    for (final entry in rawMap.entries) {
+      final parentId = int.tryParse(entry.key);
+      if (parentId == null) continue;
+      final children = (entry.value as List<dynamic>? ?? <dynamic>[])
+          .map((item) => (item as num?)?.toInt())
+          .whereType<int>()
+          .toList();
+      parentChildMap[parentId] = children;
+    }
+
+    return ReferralTeamResponse(
+      depth: (json['depth'] as num?)?.toInt() ?? 0,
+      totalTeam: (json['total_team'] as num?)?.toInt() ?? members.length,
+      levels: levels,
+      members: members,
+      parentChildMap: parentChildMap,
+    );
+  }
+}
+
+class ReferralLevelStat {
+  const ReferralLevelStat({
+    required this.level,
+    required this.count,
+    required this.earnings,
+  });
+
+  final int level;
+  final int count;
+  final double earnings;
+
+  factory ReferralLevelStat.fromJson(Map<String, dynamic> json) {
+    return ReferralLevelStat(
+      level: (json['level'] as num?)?.toInt() ?? 0,
+      count: (json['count'] as num?)?.toInt() ?? 0,
+      earnings: (json['earnings'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
+class ReferralTeamMember {
+  const ReferralTeamMember({
+    required this.id,
+    required this.level,
+    required this.parentUserId,
+    required this.childUserId,
+    required this.status,
+    required this.joinedAt,
+    required this.earning,
+    required this.member,
+  });
+
+  final int id;
+  final int level;
+  final int? parentUserId;
+  final int? childUserId;
+  final String status;
+  final DateTime? joinedAt;
+  final double earning;
+  final ReferralMember member;
+
+  factory ReferralTeamMember.fromJson(Map<String, dynamic> json) {
+    return ReferralTeamMember(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      level: (json['level'] as num?)?.toInt() ?? 0,
+      parentUserId: (json['parent_user_id'] as num?)?.toInt(),
+      childUserId: (json['child_user_id'] as num?)?.toInt(),
+      status: json['status'] as String? ?? 'pending',
+      joinedAt: DateTime.tryParse(json['joined_at']?.toString() ?? ''),
+      earning: (json['earning'] as num?)?.toDouble() ?? 0,
+      member: ReferralMember.fromJson(
+        json['member'] as Map<String, dynamic>? ?? <String, dynamic>{},
+      ),
     );
   }
 }
