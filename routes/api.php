@@ -70,6 +70,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/account/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::patch('/account/notifications/{notification}/read', [NotificationController::class, 'markRead']);
 
+        Route::get('/account/location', [LocationPreferenceController::class, 'show']);
+        Route::post('/account/location', [LocationPreferenceController::class, 'update']);
+
         Route::get('/account/orders', [OrderController::class, 'index']);
         Route::get('/account/orders/{order}', [OrderController::class, 'show']);
 
