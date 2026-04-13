@@ -145,6 +145,17 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
                                 </svg>
                                 Wishlist</a>
+                            <a href="{{ route('account.coupons.list') }}" class="flex items-center gap-3 px-4 py-2 text-surface-600 hover:bg-surface-50 hover:text-surface-900 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
+                                </svg>
+                                Coupons</a>
+                            <a href="{{ route('account.settings.edit') }}" class="flex items-center gap-3 px-4 py-2 text-surface-600 hover:bg-surface-50 hover:text-surface-900 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.094c.55 0 1.02.398 1.11.94l.077.463c.063.374.313.686.645.87.137.076.272.156.404.24.326.196.72.257 1.076.124l.44-.165c.516-.194 1.094.03 1.37.54l.547.948c.275.51.17 1.149-.26 1.53l-.364.322c-.293.26-.437.657-.43 1.046.001.154.001.31 0 .465-.007.389.137.786.43 1.046l.364.322c.43.381.535 1.02.26 1.53l-.547.948c-.276.51-.854.734-1.37.54l-.44-.165c-.356-.133-.75-.072-1.076.124a8.174 8.174 0 01-.404.24.98.98 0 00-.645.87l-.077.463c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.02-.398-1.11-.94l-.077-.463a.98.98 0 00-.645-.87 8.174 8.174 0 01-.404-.24c-.325-.196-.72-.257-1.076-.124l-.44.165a1.125 1.125 0 01-1.37-.54l-.547-.948a1.125 1.125 0 01.26-1.53l.364-.322c.293-.26.437-.657.43-1.046a9.14 9.14 0 010-.465c.007-.389-.137-.786-.43-1.046l-.364-.322a1.125 1.125 0 01-.26-1.53l.547-.948a1.125 1.125 0 011.37-.54l.44.165c.356.133.751.072 1.076-.124.132-.084.267-.164.404-.24.332-.184.582-.496.645-.87l.077-.463z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Settings</a>
                             <a href="{{ route('account.profile.edit') }}" class="flex items-center gap-3 px-4 py-2 text-surface-600 hover:bg-surface-50 hover:text-surface-900 transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
