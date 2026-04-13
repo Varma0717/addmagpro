@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CheckoutController;
+use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -61,6 +62,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/account/wishlist', [ApiWishlistController::class, 'index']);
         Route::post('/account/wishlist/toggle', [ApiWishlistController::class, 'toggle']);
         Route::get('/account/wishlist/check', [ApiWishlistController::class, 'check']);
+
+        Route::post('/account/device-tokens', [DeviceTokenController::class, 'upsert']);
     });
 
     Route::get('/categories', [CatalogController::class, 'categories']);
