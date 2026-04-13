@@ -111,6 +111,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         setState(() {
           _products.addAll(response.items);
           _lastPage = response.lastPage;
+          _availableBrands = response.availableBrands;
         });
       }
     } catch (error) {
@@ -329,6 +330,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     if (_categories.isEmpty) {
       return const Center(child: Text('No categories found'));
     }
+
+    final activeChips = _buildActiveFilterChips();
 
     return Row(
       children: [
@@ -591,4 +594,11 @@ class _ProductGridCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ActiveFilterChip {
+  const _ActiveFilterChip({required this.label, required this.onRemoved});
+
+  final String label;
+  final VoidCallback onRemoved;
 }

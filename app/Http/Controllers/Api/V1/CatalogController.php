@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Coupon;
 use App\Models\District;
@@ -252,11 +253,12 @@ class CatalogController extends Controller
     public function products(Request $request)
     {
         $perPage = min((int) $request->integer('per_page', 20), 50);
+        $categoryId = null;
 
         $query = Product::query()
             ->active()
             ->inStock()
-            ->with(['primaryImage', 'category'])
+            ->with(['primaryImage', 'category', 'brand'])
             ->withAvg('reviews as rating_avg', 'rating');
 
         if ($request->filled('category_slug')) {
@@ -274,14 +276,30 @@ class CatalogController extends Controller
             $query->where('price', '<=', (float) $request->input('max_price'));
         }
 
+        if ($request->filled('min_rating')) {
+            $query->having('rating_avg', '>=', (float) $request->input('min_rating'));
+        }
+
+        if ($request->filled('brand_id')) {
+            $query->where('brand_id', (int) $request->input('brand_id'));
+        }
+
         $sort = (string) $request->input('sort', 'latest');
         match ($sort) {
             'price_asc' => $query->orderBy('price'),
             'price_desc' => $query->orderByDesc('price'),
+            'rating' => $query->orderByDesc('rating_avg'),
             default => $query->latest(),
         };
 
         $products = $query->paginate($perPage)->withQueryString();
+        $availableBrandsQuery = Brand::query()->orderBy('brand_name');
+        if ($categoryId) {
+            $availableBrandsQuery->whereHas('products', function ($brandProductsQuery) use ($categoryId) {
+                $brandProductsQuery->active()->inStock()->where('category_id', $categoryId);
+            });
+        }
+        $availableBrands = $availableBrandsQuery->get(['id', 'brand_name']);
 
         $data = $products->through(function (Product $product): array {
             return [
@@ -300,6 +318,10 @@ class CatalogController extends Controller
                     'name' => $product->category?->name,
                     'slug' => $product->category?->slug,
                 ],
+                'brand' => [
+                    'id' => $product->brand?->id,
+                    'name' => $product->brand?->brand_name,
+                ],
                 'primary_image_url' => $product->primaryImage?->image_path ? imageUrl($product->primaryImage->image_path) : null,
             ];
         });
@@ -310,6 +332,14 @@ class CatalogController extends Controller
                 'last_page' => $data->lastPage(),
                 'per_page' => $data->perPage(),
                 'total' => $data->total(),
+            ],
+            'filters' => [
+                'available_brands' => $availableBrands->map(function (Brand $brand): array {
+                    return [
+                        'id' => $brand->id,
+                        'name' => $brand->brand_name,
+                    ];
+                })->values(),
             ],
         ]);
     }
