@@ -6,6 +6,8 @@ class AuthUser {
   final String? referralCode;
   final String? avatarUrl;
   final String? role;
+  final String? city;
+  final String? state;
   final bool isActive;
   final double walletBalance;
 
@@ -17,6 +19,8 @@ class AuthUser {
     this.referralCode,
     this.avatarUrl,
     this.role,
+    this.city,
+    this.state,
     this.isActive = true,
     this.walletBalance = 0,
   });
@@ -30,8 +34,38 @@ class AuthUser {
       referralCode: json['referral_code'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       role: json['role'] as String?,
+      city: _firstString(json, ['city', 'location_city']),
+      state: _firstString(json, ['state', 'location_state']),
       isActive: _toBool(json['is_active']) ?? true,
       walletBalance: _toDouble(json['wallet_balance']) ?? 0,
+    );
+  }
+
+  AuthUser copyWith({
+    int? id,
+    String? name,
+    String? email,
+    String? phone,
+    String? referralCode,
+    String? avatarUrl,
+    String? role,
+    String? city,
+    String? state,
+    bool? isActive,
+    double? walletBalance,
+  }) {
+    return AuthUser(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      referralCode: referralCode ?? this.referralCode,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      role: role ?? this.role,
+      city: city ?? this.city,
+      state: state ?? this.state,
+      isActive: isActive ?? this.isActive,
+      walletBalance: walletBalance ?? this.walletBalance,
     );
   }
 
@@ -59,6 +93,16 @@ class AuthUser {
       final normalized = value.trim().toLowerCase();
       if (normalized == 'true' || normalized == '1') return true;
       if (normalized == 'false' || normalized == '0') return false;
+    }
+    return null;
+  }
+
+  static String? _firstString(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
     }
     return null;
   }

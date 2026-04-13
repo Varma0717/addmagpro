@@ -17,6 +17,8 @@ import '../catalog/presentation/product_detail_screen.dart';
 import '../catalog/presentation/product_list_screen.dart';
 import '../cart/presentation/cart_screen.dart';
 import '../wishlist/presentation/wishlist_screen.dart';
+import '../wallet/data/wallet_repository.dart';
+import '../wallet/presentation/wallet_screen.dart';
 import 'data/home_repository.dart';
 import 'models/home_feed_models.dart';
 import '../notifications/presentation/notifications_screen.dart';
@@ -39,62 +41,75 @@ class _HomeScreenState extends State<HomeScreen> {
     final token = widget.appState.token;
     if (token == null) return const SizedBox.shrink();
 
-    final pages = <Widget>[
-      _DashboardView(appState: widget.appState, token: token),
-      CategoriesScreen(token: token),
-      CartScreen(token: token, appState: widget.appState),
-      WishlistScreen(token: token),
-      AccountScreen(appState: widget.appState),
-    ];
+    return AnimatedBuilder(
+      animation: widget.appState,
+      builder: (_, __) {
+        final user = widget.appState.currentUser;
+        final pages = <Widget>[
+          _DashboardView(appState: widget.appState, token: token),
+          CategoriesScreen(token: token),
+          CartScreen(token: token, appState: widget.appState),
+          WishlistScreen(token: token),
+          AccountScreen(appState: widget.appState),
+        ];
 
-    return Scaffold(
-      appBar: _currentIndex == 0
-          ? AppBar(
-              title: Row(
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(10),
+        return Scaffold(
+          appBar: _currentIndex == 0
+              ? AppBar(
+                  toolbarHeight: 76,
+                  titleSpacing: 12,
+                  title: _LocationSelector(locationLabel: _locationLabel(user?.city, user?.state)),
+                  actions: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: ActionChip(
+                        avatar: const Icon(Icons.account_balance_wallet_rounded, size: 18, color: AppColors.primary),
+                        label: Text('₹${(user?.walletBalance ?? 0).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary)),
+                        backgroundColor: AppColors.primaryLight,
+                        side: BorderSide(color: AppColors.primary.withAlpha(45)),
+                        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => WalletScreen(token: token))),
+                      ),
                     ),
-                    child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 18),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text('AddMagPro'),
-                ],
-              ),
-              actions: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SearchScreen(token: token))),
-                  icon: const Icon(Icons.search_rounded),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => NotificationsScreen(token: token))),
-                  icon: const Icon(Icons.notifications_outlined),
-                ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SearchScreen(token: token))),
+                      icon: const Icon(Icons.search_rounded),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => NotificationsScreen(token: token))),
+                      icon: const Icon(Icons.notifications_outlined),
+                    ),
+                  ],
+                )
+              : AppBar(title: Text(_titleForIndex(_currentIndex))),
+          body: IndexedStack(index: _currentIndex, children: pages),
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, -2))],
+            ),
+            child: NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: (index) => setState(() => _currentIndex = index),
+              destinations: const [
+                NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Home'),
+                NavigationDestination(icon: Icon(Icons.category_outlined), selectedIcon: Icon(Icons.category_rounded), label: 'Categories'),
+                NavigationDestination(icon: Icon(Icons.shopping_bag_outlined), selectedIcon: Icon(Icons.shopping_bag_rounded), label: 'Cart'),
+                NavigationDestination(icon: Icon(Icons.favorite_outline_rounded), selectedIcon: Icon(Icons.favorite_rounded), label: 'Wishlist'),
+                NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Account'),
               ],
-            )
-          : AppBar(title: Text(_titleForIndex(_currentIndex))),
-      body: IndexedStack(index: _currentIndex, children: pages),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, -2))],
-        ),
-        child: NavigationBar(
-          selectedIndex: _currentIndex,
-          onDestinationSelected: (index) => setState(() => _currentIndex = index),
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Home'),
-            NavigationDestination(icon: Icon(Icons.category_outlined), selectedIcon: Icon(Icons.category_rounded), label: 'Categories'),
-            NavigationDestination(icon: Icon(Icons.shopping_bag_outlined), selectedIcon: Icon(Icons.shopping_bag_rounded), label: 'Cart'),
-            NavigationDestination(icon: Icon(Icons.favorite_outline_rounded), selectedIcon: Icon(Icons.favorite_rounded), label: 'Wishlist'),
-            NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Account'),
-          ],
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
+  }
+
+  String _locationLabel(String? city, String? state) {
+    if ((city ?? '').trim().isNotEmpty && (state ?? '').trim().isNotEmpty) {
+      return '${city!.trim()}, ${state!.trim()}';
+    }
+    if ((city ?? '').trim().isNotEmpty) return city!.trim();
+    if ((state ?? '').trim().isNotEmpty) return state!.trim();
+    return 'Select location';
   }
 
   String _titleForIndex(int index) {
@@ -121,6 +136,7 @@ class _DashboardView extends StatefulWidget {
 
 class _DashboardViewState extends State<_DashboardView> {
   late final HomeRepository _repository;
+  late final WalletRepository _walletRepository;
   final PageController _bannerController = PageController();
   Timer? _bannerTimer;
   bool _loading = true;
@@ -131,6 +147,7 @@ class _DashboardViewState extends State<_DashboardView> {
   void initState() {
     super.initState();
     _repository = HomeRepository(apiClient: ApiClient());
+    _walletRepository = WalletRepository(apiClient: ApiClient());
     _load();
   }
 
@@ -144,7 +161,16 @@ class _DashboardViewState extends State<_DashboardView> {
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final response = await _repository.fetch();
+      final results = await Future.wait<dynamic>([
+        _repository.fetch(city: widget.appState.currentUser?.city),
+        widget.appState.refreshProfile(),
+        _walletRepository.fetch(widget.token),
+      ]);
+      final response = results[0] as HomeFeed;
+      final wallet = results[2];
+      if (wallet != null && widget.appState.currentUser != null) {
+        widget.appState.replaceCurrentUser(widget.appState.currentUser!.copyWith(walletBalance: wallet.balance));
+      }
       if (!mounted) return;
       setState(() => _feed = response);
       _startBannerAutoScroll();
@@ -442,6 +468,42 @@ class _DashboardViewState extends State<_DashboardView> {
           Container(height: 20, width: 160, color: Colors.white),
           const SizedBox(height: 14),
           Row(children: List.generate(2, (_) => Expanded(child: Container(height: 200, margin: const EdgeInsets.only(right: 12), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)))))),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationSelector extends StatelessWidget {
+  const _LocationSelector({required this.locationLabel});
+
+  final String locationLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Location settings will be available soon.'), behavior: SnackBarBehavior.floating),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
+          const SizedBox(width: 6),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 180),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Deliver to', style: TextStyle(fontSize: 11, color: AppColors.textSecondary.withAlpha(220))),
+                Text(locationLabel, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 2),
+          const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: AppColors.textSecondary),
         ],
       ),
     );
