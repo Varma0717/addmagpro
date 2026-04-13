@@ -8,7 +8,6 @@ import '../../home/data/home_repository.dart';
 import '../../home/models/home_feed_models.dart';
 import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
-import 'product_filters_sheet.dart';
 import 'product_detail_screen.dart';
 
 enum _CatalogSortOption {
@@ -34,13 +33,6 @@ class CategoriesScreen extends StatefulWidget {
 }
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
-  static const Map<String, String> _sortOptions = <String, String>{
-    'latest': 'Latest',
-    'price_asc': 'Price: Low-High',
-    'price_desc': 'Price: High-Low',
-    'rating': 'Rating',
-  };
-
   late final HomeRepository _homeRepository;
   late final CatalogRepository _catalogRepository;
   bool _loadingCategories = true;
@@ -111,7 +103,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     try {
       final category = _categories[_selectedIndex];
       if (category.type == 'ecommerce') {
-        final filters = _filtersByCategoryIndex[_selectedIndex] ?? const ProductFilterQuery();
         final response = await _catalogRepository.fetchProducts(
           page: _page,
           categorySlug: category.slug,
@@ -125,7 +116,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         setState(() {
           _products.addAll(response.items);
           _lastPage = response.lastPage;
-          _availableBrands = response.availableBrands;
         });
       }
     } catch (error) {
@@ -165,18 +155,20 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       showDragHandle: true,
       builder: (context) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: _CatalogSortOption.values
-                .map(
-                  (option) => RadioListTile<_CatalogSortOption>(
-                    title: Text(option.label),
-                    value: option,
-                    groupValue: _sortOption,
-                    onChanged: (value) => Navigator.of(context).pop(value),
-                  ),
-                )
-                .toList(),
+          child: RadioGroup<_CatalogSortOption>(
+            groupValue: _sortOption,
+            onChanged: (value) => Navigator.of(context).pop(value),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: _CatalogSortOption.values
+                  .map(
+                    (option) => RadioListTile<_CatalogSortOption>(
+                      title: Text(option.label),
+                      value: option,
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
         );
       },
@@ -239,7 +231,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<double?>(
-                      value: draftRating,
+                      initialValue: draftRating,
                       decoration: const InputDecoration(labelText: 'Minimum Rating'),
                       items: const [
                         DropdownMenuItem<double?>(value: null, child: Text('Any')),
@@ -344,8 +336,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     if (_categories.isEmpty) {
       return const Center(child: Text('No categories found'));
     }
-
-    final activeChips = _buildActiveFilterChips();
 
     return Row(
       children: [
@@ -608,11 +598,4 @@ class _ProductGridCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ActiveFilterChip {
-  const _ActiveFilterChip({required this.label, required this.onRemoved});
-
-  final String label;
-  final VoidCallback onRemoved;
 }

@@ -23,10 +23,7 @@ class ReferralResponse {
   final List<TeamNode> teamStructure;
   final List<LevelSummary> levelSummary;
 
-  factory ReferralResponse.fromJson(
-    Map<String, dynamic> json, {
-    ReferralTeamResponse? team,
-  }) {
+  factory ReferralResponse.fromJson(Map<String, dynamic> json) {
     final summary = json['summary'] as Map<String, dynamic>? ?? <String, dynamic>{};
     final share = json['share'] as Map<String, dynamic>? ?? <String, dynamic>{};
     final items = (json['referrals'] as List<dynamic>? ?? <dynamic>[])
@@ -189,4 +186,52 @@ class ReferralMember {
       isActive: json['is_active'] as bool? ?? false,
     );
   }
+}
+
+class TeamStructureSummary {
+  const TeamStructureSummary({
+    required this.totalTeamSize,
+    required this.maxDepth,
+    required this.levels,
+  });
+
+  final int totalTeamSize;
+  final int maxDepth;
+  final List<TeamStructureLevel> levels;
+
+  factory TeamStructureSummary.fromNodes(List<TeamNode> nodes) {
+    if (nodes.isEmpty) {
+      return const TeamStructureSummary(totalTeamSize: 0, maxDepth: 0, levels: []);
+    }
+    final grouped = <int, List<TeamNode>>{};
+    for (final node in nodes) {
+      grouped.putIfAbsent(node.depth, () => <TeamNode>[]).add(node);
+    }
+    final levels = grouped.entries
+        .toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    return TeamStructureSummary(
+      totalTeamSize: nodes.length,
+      maxDepth: levels.last.key,
+      levels: levels
+          .map((e) => TeamStructureLevel(
+                level: e.key,
+                count: e.value.length,
+                members: e.value.map((n) => n.member).toList(),
+              ))
+          .toList(),
+    );
+  }
+}
+
+class TeamStructureLevel {
+  const TeamStructureLevel({
+    required this.level,
+    required this.count,
+    required this.members,
+  });
+
+  final int level;
+  final int count;
+  final List<ReferralMember> members;
 }

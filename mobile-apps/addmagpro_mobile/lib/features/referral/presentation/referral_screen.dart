@@ -262,7 +262,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _TeamStructureCard(summary: data.teamStructure),
+          _TeamStructureCard(summary: TeamStructureSummary.fromNodes(data.teamStructure)),
           const SizedBox(height: 20),
           const Text(
             'Team Structure',
@@ -334,22 +334,6 @@ class _ReferralScreenState extends State<ReferralScreen> {
         ],
       ),
     );
-  }
-
-  List<Widget> _buildHierarchy(List<ReferralTeamMember> members) {
-    final byParent = <int, List<ReferralTeamMember>>{};
-    for (final member in members) {
-      final parent = member.parentUserId;
-      if (parent == null) continue;
-      byParent.putIfAbsent(parent, () => <ReferralTeamMember>[]).add(member);
-    }
-
-    final rootMembers = members.where((member) => member.level == 1).toList()
-      ..sort((a, b) => (a.member.name).compareTo(b.member.name));
-
-    return rootMembers
-        .map((root) => _HierarchyTile(member: root, byParent: byParent))
-        .toList();
   }
 }
 
@@ -724,81 +708,6 @@ class _ReferralCard extends StatelessWidget {
     if (value == null) return '-';
     final local = value.toLocal();
     return '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
-  }
-}
-
-class _LevelStatCard extends StatelessWidget {
-  const _LevelStatCard({required this.level});
-
-  final ReferralLevelStat level;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 145,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('L${level.level}', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          Text('${level.count}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-          const Text('Members', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-          const Spacer(),
-          Text('₹${level.earnings.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.w700)),
-        ],
-      ),
-    );
-  }
-}
-
-class _HierarchyTile extends StatelessWidget {
-  const _HierarchyTile({
-    required this.member,
-    required this.byParent,
-  });
-
-  final ReferralTeamMember member;
-  final Map<int, List<ReferralTeamMember>> byParent;
-
-  @override
-  Widget build(BuildContext context) {
-    final children = byParent[member.childUserId] ?? <ReferralTeamMember>[];
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.borderLight),
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-        childrenPadding: const EdgeInsets.only(bottom: 8),
-        title: Text(
-          member.member.name,
-          style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-        ),
-        subtitle: Text(
-          'L${member.level} • ₹${member.earning.toStringAsFixed(2)} • ${member.member.phone ?? '-'}',
-          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-        ),
-        trailing: Text(
-          '${children.length} sub',
-          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-        ),
-        children: children
-            .map((child) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: _HierarchyTile(member: child, byParent: byParent),
-                ))
-            .toList(),
-      ),
-    );
   }
 }
 

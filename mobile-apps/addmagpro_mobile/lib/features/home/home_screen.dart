@@ -16,10 +16,8 @@ import '../catalog/presentation/listing_list_screen.dart';
 import '../catalog/presentation/product_detail_screen.dart';
 import '../catalog/presentation/product_list_screen.dart';
 import '../cart/presentation/cart_screen.dart';
-import '../notifications/data/notification_repository.dart';
 import '../wishlist/presentation/wishlist_screen.dart';
 import 'data/home_repository.dart';
-import 'data/location_repository.dart';
 import 'models/home_feed_models.dart';
 import '../notifications/presentation/notifications_screen.dart';
 import '../search/presentation/search_screen.dart';
@@ -53,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
         stateId: _selectedStateId,
         districtId: _selectedDistrictId,
       ),
-      CategoriesScreen(token: token),
+      CategoriesScreen(appState: widget.appState, token: token),
       CartScreen(token: token, appState: widget.appState),
       WishlistScreen(token: token),
       AccountScreen(appState: widget.appState),
@@ -324,14 +322,6 @@ class _DashboardViewState extends State<_DashboardView> {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: _LocationSelector(
-              appState: widget.appState,
-              onLocationChanged: _load,
-            ),
-          ),
-
           // ── Banner Carousel ──
           if (feed.banners.isNotEmpty) ...[
             SizedBox(
@@ -663,7 +653,7 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
             const Text('Choose location', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
-              value: _stateId ?? 0,
+              initialValue: _stateId ?? 0,
               decoration: const InputDecoration(
                 labelText: 'State',
                 prefixIcon: Icon(Icons.map_outlined),
@@ -688,7 +678,7 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<int>(
-              value: _districtId ?? 0,
+              initialValue: _districtId ?? 0,
               decoration: InputDecoration(
                 labelText: 'District',
                 prefixIcon: const Icon(Icons.location_city_outlined),

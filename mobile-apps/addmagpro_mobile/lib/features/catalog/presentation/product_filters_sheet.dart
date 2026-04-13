@@ -97,7 +97,7 @@ class _ProductFiltersSheetState extends State<_ProductFiltersSheet> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<int?>(
-              value: _brandId,
+              initialValue: _brandId,
               decoration: const InputDecoration(labelText: 'Brand'),
               items: <DropdownMenuItem<int?>>[
                 const DropdownMenuItem<int?>(value: null, child: Text('All brands')),
@@ -107,7 +107,7 @@ class _ProductFiltersSheetState extends State<_ProductFiltersSheet> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<ProductSortOption>(
-              value: _sort,
+              initialValue: _sort,
               decoration: const InputDecoration(labelText: 'Sort by'),
               items: ProductSortOption.values
                   .map((option) => DropdownMenuItem<ProductSortOption>(value: option, child: Text(option.label)))

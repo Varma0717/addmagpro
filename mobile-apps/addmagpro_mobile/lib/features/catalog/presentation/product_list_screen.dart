@@ -28,13 +28,6 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
-  static const Map<String, String> _sortOptions = <String, String>{
-    'latest': 'Latest',
-    'price_asc': 'Price: Low-High',
-    'price_desc': 'Price: High-Low',
-    'rating': 'Rating',
-  };
-
   late final CatalogRepository _repository;
   bool _loading = true;
   String? _error;
@@ -60,8 +53,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
       final response = await _repository.fetchProducts(
         page: _page,
         categorySlug: widget.categorySlug,
-        stateId: widget.appState.selectedState?.id,
-        districtId: widget.appState.selectedDistrict?.id,
+        sort: _filters.sort.value,
+        minPrice: _filters.minPrice,
+        maxPrice: _filters.maxPrice,
+        rating: _filters.minRating,
       );
       if (!mounted) return;
       setState(() { _items.addAll(response.items); _lastPage = response.lastPage; });
@@ -104,6 +99,52 @@ class _ProductListScreenState extends State<ProductListScreen> {
         nextFilters.sort == _filters.sort;
     if (isUnchanged) return;
     setState(() => _filters = nextFilters);
+    _load(reset: true);
+  }
+
+  List<Widget> _buildActiveFilterChips() {
+    final chips = <Widget>[];
+    if (_filters.minPrice != null) {
+      chips.add(Chip(
+        label: Text('Min ₹${_filters.minPrice!.toStringAsFixed(0)}'),
+        onDeleted: () {
+          setState(() => _filters = _filters.copyWith(clearMinPrice: true));
+          _load(reset: true);
+        },
+      ));
+    }
+    if (_filters.maxPrice != null) {
+      chips.add(Chip(
+        label: Text('Max ₹${_filters.maxPrice!.toStringAsFixed(0)}'),
+        onDeleted: () {
+          setState(() => _filters = _filters.copyWith(clearMaxPrice: true));
+          _load(reset: true);
+        },
+      ));
+    }
+    if (_filters.minRating != null) {
+      chips.add(Chip(
+        label: Text('Rating ${_filters.minRating!.toStringAsFixed(1)}+'),
+        onDeleted: () {
+          setState(() => _filters = _filters.copyWith(clearMinRating: true));
+          _load(reset: true);
+        },
+      ));
+    }
+    if (_filters.sort != ProductSortOption.latest) {
+      chips.add(Chip(
+        label: Text(_filters.sort.label),
+        onDeleted: () {
+          setState(() => _filters = _filters.copyWith(sort: ProductSortOption.latest));
+          _load(reset: true);
+        },
+      ));
+    }
+    return chips;
+  }
+
+  void _clearAllFilters() {
+    setState(() => _filters = const ProductFilterQuery());
     _load(reset: true);
   }
 

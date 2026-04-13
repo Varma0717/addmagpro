@@ -20,9 +20,10 @@ class ReferralRepository {
       throw ApiException('Invalid referral team response');
     }
 
-    return ReferralResponse.fromJson(
-      data,
-      team: ReferralTeamResponse.fromJson(teamData),
-    );
+    // Merge team data into the main response data before parsing
+    data['team_structure'] = teamData['team_structure'] ?? data['team_structure'] ?? [];
+    data['level_summary'] = teamData['level_summary'] ?? data['level_summary'] ?? [];
+
+    return ReferralResponse.fromJson(data);
   }
 }
