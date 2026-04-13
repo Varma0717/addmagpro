@@ -44,4 +44,10 @@ return [
         'server_key' => env('FIREBASE_SERVER_KEY'),
     ],
 
+    'ai_assistant' => [
+        'enabled' => env('AI_ASSISTANT_ENABLED', false),
+        'endpoint' => env('AI_ASSISTANT_ENDPOINT'),
+        'api_key' => env('AI_ASSISTANT_API_KEY'),
+    ],
+
 ];

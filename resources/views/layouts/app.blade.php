@@ -271,6 +271,8 @@
         @yield('content')
     </main>
 
+    <x-chatbot-panel />
+
     {{-- ── Premium Footer ── --}}
     <footer class="bg-surface-900 text-surface-300 mt-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-16 pb-8">
@@ -374,6 +376,63 @@
                             this.count = d.count || 0;
                         })
                         .catch(() => {});
+                }
+            }
+        }
+
+
+        function chatbotWidget() {
+            return {
+                open: false,
+                loading: false,
+                currentIntent: null,
+                suggestions: [],
+                toggleWidget(value) {
+                    this.open = value;
+                    if (value) {
+                        this.track('widget_opened');
+                    }
+                },
+                selectIntent(intent) {
+                    this.currentIntent = intent;
+                    this.loading = true;
+                    this.suggestions = [];
+                    this.track('intent_selected', { intent });
+
+                    fetch('/api/chatbot/suggestions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ intent })
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            this.suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+                        })
+                        .catch(() => {
+                            this.suggestions = [];
+                        })
+                        .finally(() => {
+                            this.loading = false;
+                        });
+                },
+                track(eventType, meta = {}) {
+                    fetch('/api/chatbot/track', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            event_type: eventType,
+                            intent: this.currentIntent,
+                            meta,
+                        })
+                    }).catch(() => {});
                 }
             }
         }
