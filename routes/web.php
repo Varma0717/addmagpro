@@ -67,7 +67,6 @@ Route::middleware('auth')->prefix('account')->name('account.')->group(function (
     Route::get('/discount-customer-payments', [Account\ExecutiveController::class, 'discountStoreCustomerPayments'])->name('discount-payments.index');
     Route::post('/withdraw', [Account\ExecutiveController::class, 'requestWithdraw'])->name('withdraw.store');
     Route::get('/transactions', [Account\WalletController::class, 'transactions'])->name('transactions.index');
-    Route::get('/settings', [Account\SettingsController::class, 'index'])->name('settings.index');
     Route::get('/support', [Account\SupportController::class, 'index'])->name('support.index');
     Route::get('/profile', [Account\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [Account\ProfileController::class, 'update'])->name('profile.update');
