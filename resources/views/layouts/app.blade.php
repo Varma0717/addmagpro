@@ -28,7 +28,12 @@
     @stack('head')
 </head>
 
-<body class="bg-surface-50 font-sans antialiased" x-data="{ mobileMenu: false }">
+<body class="bg-surface-50 font-sans antialiased"
+    x-data="{ mobileMenu: false }"
+    data-location-state="{{ session('location_state_id', '') }}"
+    data-location-district="{{ session('location_district_id', '') }}"
+    data-location-district-int="{{ session('location_district_id', 0) }}"
+    data-location-label="{{ session('location_label', 'All India') }}">
 
     {{-- ── Sticky Header ── --}}
     <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-surface-100 shadow-sm">
@@ -497,17 +502,14 @@
         }
 
         function locationPicker() {
+            var _body = document.body;
             return {
                 open: false,
-                stateId: '{{ session("location_state_id", "") }}',
-                districtId: '{{ session("location_district_id", "") }}',
-                initialDistrictId: {
-                    {
-                        session('location_district_id', 0)
-                    }
-                },
+                stateId: _body.dataset.locationState || '',
+                districtId: _body.dataset.locationDistrict || '',
+                initialDistrictId: parseInt(_body.dataset.locationDistrictInt, 10) || 0,
                 districts: [],
-                selectedLabel: '{{ session("location_label", "All India") }}',
+                selectedLabel: _body.dataset.locationLabel || 'All India',
                 init() {
                     if (this.stateId) this.loadDistricts(this.stateId);
                 },
