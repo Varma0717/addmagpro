@@ -21,6 +21,8 @@
     @endphp
     @if (!$viteRendered)
     <script src="https://cdn.tailwindcss.com"></script>
+    {{-- Alpine CDN auto-starts when loaded; component functions are already
+         defined in the footer inline script which runs before this loads. --}}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     @endif
     @stack('head')
@@ -542,12 +544,17 @@
             }
         }
 
-        // Start Alpine after all component functions are defined
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.Alpine && !window.Alpine.started) {
-                window.Alpine.start();
-            }
-        });
+        // Start Alpine after all component functions are defined.
+        // Module scripts (Vite) are deferred and run AFTER inline scripts,
+        // so window.Alpine may not exist yet. Wait for DOMContentLoaded
+        // which fires after deferred/module scripts have executed.
+        if (window.Alpine) {
+            window.Alpine.start();
+        } else {
+            document.addEventListener('DOMContentLoaded', () => {
+                if (window.Alpine) window.Alpine.start();
+            });
+        }
     </script>
 </body>
 

@@ -4,7 +4,8 @@ import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
 
-Alpine.start();
+// Do NOT call Alpine.start() here.
+// It is called from the layout blade after component functions are defined.
 
 /* Scroll-triggered animations */
 if ('IntersectionObserver' in window) {

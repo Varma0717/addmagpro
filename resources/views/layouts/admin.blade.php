@@ -149,6 +149,11 @@
     </div>
 
     @stack('scripts')
+    <script>
+        if (window.Alpine) {
+            window.Alpine.start();
+        }
+    </script>
 </body>
 
 </html>
