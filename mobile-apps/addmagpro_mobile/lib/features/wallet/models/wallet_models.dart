@@ -107,11 +107,26 @@ class WalletTopupOrder {
   final String keyId;
 
   factory WalletTopupOrder.fromJson(Map<String, dynamic> json) {
+    final dynamic rawAmount = json['amount'];
+    int parsedAmount = 0;
+    if (rawAmount is int) {
+      parsedAmount = rawAmount;
+    } else if (rawAmount is double) {
+      parsedAmount = rawAmount.toInt();
+    } else if (rawAmount is String) {
+      parsedAmount = int.tryParse(rawAmount) ?? 0;
+    }
+
+    // Razorpay expects amount in paise. Some APIs return rupees.
+    if (parsedAmount > 0 && parsedAmount < 1000) {
+      parsedAmount = parsedAmount * 100;
+    }
+
     return WalletTopupOrder(
       orderId: json['order_id'] as String? ?? '',
-      amount: (json['amount'] as num?)?.toInt() ?? 0,
+      amount: parsedAmount,
       currency: json['currency'] as String? ?? 'INR',
-      keyId: json['key_id'] as String? ?? '',
+      keyId: (json['key_id'] as String?) ?? (json['razorpay_key'] as String?) ?? '',
     );
   }
 }

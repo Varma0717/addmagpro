@@ -123,10 +123,19 @@ class _AddMagProAppState extends State<AddMagProApp> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withAlpha(18), blurRadius: 16, offset: const Offset(0, 6)),
+                  ],
                 ),
-                child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 40),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset('assets/branding/logo.png', fit: BoxFit.contain),
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
